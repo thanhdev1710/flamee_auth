@@ -2,11 +2,8 @@ package controllers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/thanhdev1710/flamee_auth/global"
-	"github.com/thanhdev1710/flamee_auth/internal/models"
 	"github.com/thanhdev1710/flamee_auth/internal/services"
 	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 )
@@ -76,65 +73,33 @@ func (ac *AuthControllers) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// Kiểm tra trong DB session
-	var session models.Session
-	if err := global.Pdb.
-		Where("user_id = ? AND token = ?", claims.Subject, cookieToken).
-		First(&session).Error; err != nil {
-		// Nếu không tìm thấy session hoặc session hết hạn
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Refresh token expired or invalid"})
-		return
-	}
-
-	// Kiểm tra xem refresh token có hết hạn không
-	if session.ExpiresAt.Before(time.Now()) {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Refresh token expired"})
-		return
-	}
-
-	// Lấy thông tin người dùng từ database
-	var user models.User
-	if err := global.Pdb.First(&user, "id = ?", claims.Subject).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "User not found"})
-		return
-	}
-
-	// Tạo access token mới
-	tokenDuration, err := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	// Gọi AuthService để xử lý logic refresh token
+	accessToken, err := ac.authServices.RefreshToken(cookieToken, claims, c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to parse token expiration time"})
-		return
-	}
-	accessToken, err := utils.GenerateToken(&user, tokenDuration)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to generate access token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
 	}
 
-	// Tạo refresh token mới nếu muốn "rotate" refresh token
-	newRefreshDuration, err := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to parse refresh token expiration time"})
-		return
-	}
-	newRefreshToken, err := utils.GenerateToken(&user, newRefreshDuration)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to generate refresh token"})
-		return
-	}
-
-	// Cập nhật refresh token trong session nếu cần
-	session.Token = newRefreshToken
-	session.ExpiresAt = time.Now().Add(newRefreshDuration)
-	if err := global.Pdb.Save(&session).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update session"})
-		return
-	}
-
-	utils.SetCookiesToken(c, accessToken, newRefreshToken, tokenDuration, newRefreshDuration)
 	// Trả về access token mới
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Refresh token success",
 		"token":   accessToken,
+	})
+}
+
+func (ac *AuthControllers) Logout(c *gin.Context) {
+	// Gọi service LogoutUser để thực hiện đăng xuất
+	err := ac.authServices.LogoutUser(c)
+	if err != nil {
+		// Nếu có lỗi xảy ra, trả về lỗi với thông báo và mã lỗi phù hợp
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Logout failed: " + err.Error(),
+		})
+		return
+	}
+
+	// Nếu đăng xuất thành công, trả về phản hồi thành công
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logged out successfully",
 	})
 }

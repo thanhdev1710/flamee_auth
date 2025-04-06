@@ -140,3 +140,60 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 
 	return accessToken, nil
 }
+
+func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c *gin.Context) (string, error) {
+	// Kiểm tra trong DB session
+	var session models.Session
+	if err := global.Pdb.Where("user_id = ? AND token = ?", claims.Subject, cookieToken).First(&session).Error; err != nil {
+		return "", errors.New("refresh token expired or invalid")
+	}
+
+	// Kiểm tra xem refresh token có hết hạn không
+	if session.ExpiresAt.Before(time.Now()) {
+		return "", errors.New("refresh token expired")
+	}
+
+	// Lấy thông tin người dùng từ database
+	var user models.User
+	if err := global.Pdb.First(&user, "id = ?", claims.Subject).Error; err != nil {
+		return "", errors.New("user not found")
+	}
+
+	// Tạo access token mới
+	timeDefault, err := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	if err != nil {
+		return "", errors.New("failed to parse token expiration time")
+	}
+	accessToken, err := utils.GenerateToken(&user, timeDefault)
+	if err != nil {
+		return "", errors.New("failed to generate access token")
+	}
+
+	// Tạo refresh token mới nếu muốn "rotate" refresh token
+	timeRemember, err := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
+	if err != nil {
+		return "", errors.New("failed to parse refresh token expiration time")
+	}
+	newRefreshToken, err := utils.GenerateToken(&user, timeRemember)
+	if err != nil {
+		return "", errors.New("failed to generate refresh token")
+	}
+
+	// Cập nhật refresh token trong session nếu cần
+	session.Token = newRefreshToken
+	session.ExpiresAt = time.Now().Add(timeRemember)
+	if err := global.Pdb.Save(&session).Error; err != nil {
+		return "", errors.New("failed to update session")
+	}
+
+	utils.SetCookiesToken(c, accessToken, newRefreshToken, timeDefault, timeRemember)
+	return accessToken, nil
+}
+
+func (as *AuthServices) LogoutUser(ctx *gin.Context) error {
+	// Xóa cookie của access token và refresh token
+	utils.SetCookiesToken(ctx, "", "", -1, -1)
+
+	// Trả về thông báo logout thành công
+	return nil
+}

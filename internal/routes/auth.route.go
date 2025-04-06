@@ -11,5 +11,6 @@ func AuthRoutes(r *gin.Engine) {
 		auth.POST("/register", controllers.NewAuthControllers().Register)
 		auth.POST("/login", controllers.NewAuthControllers().Login)
 		auth.POST("/refresh_token", controllers.NewAuthControllers().RefreshToken)
+		auth.POST("/logout", controllers.NewAuthControllers().Logout)
 	}
 }
