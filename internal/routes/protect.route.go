@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/thanhdev1710/flamee_auth/internal/repo"
 	"github.com/thanhdev1710/flamee_auth/middlewares"
+	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 )
 
 func ProtectRoutes(r *gin.Engine) {
@@ -37,9 +38,6 @@ func ProtectRoutes(r *gin.Engine) {
 
 		})
 
-		// 	protect.GET("/users/*action", func(ctx *gin.Context) {
-		// 		proxy := utils.NewReverseProxy("http://localhost:8001") // Dịch vụ người dùng
-		// 		proxy.ServeHTTP(ctx.Writer, ctx.Request)
-		// })
+		protect.GET("/test/:idd", utils.ForwardTo("http://localhost:3000"))
 	}
 }

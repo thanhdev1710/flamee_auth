@@ -151,7 +151,7 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 	verificationURL := fmt.Sprintf("%s://%s/auth/verify-email/%s", protocol, c.Request.Host, token)
 
 	// Gửi email xác nhận
-	ac.emailServices.SendVerificationEmail(email, verificationURL)
+	ac.emailServices.Send(email, verificationURL, "verification")
 
 	// Phản hồi về việc gửi email
 	c.JSON(http.StatusOK, gin.H{
@@ -168,7 +168,7 @@ func (ac *AuthControllers) VerifyEmail(c *gin.Context) {
 	if err != nil {
 		// Nếu lỗi giải mã token, trả về lỗi với thông báo tương ứng
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Token không hợp lệ hoặc đã hết hạn",
+			"error": "Invalid or expired token",
 		})
 		return
 	}
@@ -186,6 +186,51 @@ func (ac *AuthControllers) VerifyEmail(c *gin.Context) {
 	// Nếu email được xác thực thành công, trả về phản hồi thành công
 	c.JSON(http.StatusOK, gin.H{
 		"email":   email,
-		"message": "Email đã được xác thực thành công",
+		"message": "Email verified successfully",
+	})
+}
+
+func (ac *AuthControllers) SendResetPassword(c *gin.Context) {
+	email := c.Param("email")
+	// Kiểm tra xem email có hợp lệ không
+	if email == "" || !utils.IsValidEmail(email) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid or missing email parameter",
+		})
+		return
+	}
+
+	err := ac.userServices.SendResetPassword(email, c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Password reset email is being sent. Please check your inbox within 24 hours.",
+	})
+}
+
+type ResetPasswordRequest struct {
+	Password string `json:"password"`
+}
+
+func (ac *AuthControllers) ResetPassword(c *gin.Context) {
+	token := c.Param("token")
+	var body ResetPasswordRequest
+	if err := c.ShouldBindJSON(&body); err != nil || body.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err := ac.userServices.UpdatePassword(token, body.Password)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Password reset was successful",
 	})
 }

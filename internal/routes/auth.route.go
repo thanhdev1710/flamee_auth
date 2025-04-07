@@ -14,5 +14,7 @@ func AuthRoutes(r *gin.Engine) {
 		auth.POST("/logout", controllers.NewAuthControllers().Logout)
 		auth.POST("/send-email/:email", controllers.NewAuthControllers().SendVerifyEmail)
 		auth.GET("/verify-email/:token", controllers.NewAuthControllers().VerifyEmail)
+		auth.POST("/reset-password/:email", controllers.NewAuthControllers().SendResetPassword)
+		auth.POST("/change-password/:token", controllers.NewAuthControllers().ResetPassword)
 	}
 }

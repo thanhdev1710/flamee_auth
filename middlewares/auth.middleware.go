@@ -14,13 +14,22 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Lấy token từ header Authorization
-		tokenStr := strings.Split(ctx.GetHeader("Authorization"), " ")[1]
+		authHeader := ctx.GetHeader("Authorization")
+		parts := strings.Split(authHeader, " ")
+
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "Invalid Authorization header format",
+			})
+			ctx.Abort()
+			return
+		}
+
+		tokenStr := parts[1]
 
 		// Kiểm tra token hợp lệ
 		claims, err := utils.ValidateToken(tokenStr)
 		if err != nil {
-			// Nếu token không hợp lệ, trả về lỗi
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"message": err.Error(),
 			})

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/models"
 	"gorm.io/gorm"
@@ -37,4 +38,12 @@ func (sr *SessionRepo) FindByUserAndToken(userId, token string) (*models.Session
 	}
 
 	return &session, nil
+}
+
+func (sr *SessionRepo) RevokeTokensByUserId(userId uuid.UUID) error {
+	// Xóa tất cả session của người dùng
+	if err := global.Pdb.Where("user_id = ?", userId).Delete(&models.Session{}).Error; err != nil {
+		return errors.New("failed to revoke tokens")
+	}
+	return nil
 }

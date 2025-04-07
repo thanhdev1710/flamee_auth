@@ -3,6 +3,7 @@ package repo
 import (
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/models"
 	"gorm.io/gorm"
@@ -47,4 +48,11 @@ func (ur *UserRepo) Create(user *models.User) error {
 
 func (ur *UserRepo) Save(user *models.User) error {
 	return global.Pdb.Save(user).Error
+}
+
+func (ur *UserRepo) UpdatePassword(userId uuid.UUID, password string) error {
+	if err := global.Pdb.Model(&models.User{}).Where("id = ?", userId).Update("password", password).Error; err != nil {
+		return err
+	}
+	return nil
 }
