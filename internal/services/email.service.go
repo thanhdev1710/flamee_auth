@@ -2,8 +2,9 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"net/smtp"
+
+	"github.com/thanhdev1710/flamee_auth/global"
 )
 
 type EmailServices struct{}
@@ -12,15 +13,14 @@ func NewEmailServices() *EmailServices {
 	return &EmailServices{}
 }
 
-// TODO: MAI CODE TIẾP PHẦN GỬI EMAIL
-func SendVerificationEmail(toEmail string, verificationURL string) error {
+func (es *EmailServices) SendVerificationEmail(toEmail string, verificationURL string) {
 	// Cấu hình người gửi
-	from := "youremail@example.com"
-	password := "yourpassword"
+	from := global.Config.Email.Username
+	password := global.Config.Email.Password
 
 	// Cấu hình SMTP server
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	smtpHost := global.Config.Email.Host
+	smtpPort := global.Config.Email.Port
 
 	// Tạo nội dung email HTML với button xác thực
 	htmlBody := fmt.Sprintf(`
@@ -47,14 +47,11 @@ func SendVerificationEmail(toEmail string, verificationURL string) error {
 		// Gửi email
 		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, msg)
 		if err != nil {
-			log.Println("Failed to send email:", err)
-			return
+			// Nếu gửi không thành công, có thể ghi log lỗi ở đây
+			fmt.Printf("Failed to send verification email to %s: %v\n", toEmail, err)
+		} else {
+			// Nếu gửi thành công, ghi log thành công (nếu cần)
+			fmt.Printf("Verification email sent to %s\n", toEmail)
 		}
-
-		// In ra khi email đã được gửi thành công
-		fmt.Println("Verification email sent successfully!")
 	}()
-
-	// Trả về nil vì chúng ta không cần chờ đợi việc gửi email
-	return nil
 }

@@ -1,0 +1,50 @@
+package repo
+
+import (
+	"errors"
+
+	"github.com/thanhdev1710/flamee_auth/global"
+	"github.com/thanhdev1710/flamee_auth/internal/models"
+	"gorm.io/gorm"
+)
+
+type UserRepo struct {
+}
+
+func NewUserRepo() *UserRepo {
+	return &UserRepo{}
+}
+
+func (ur *UserRepo) FindByEmail(email string) (*models.User, error) {
+	var user models.User
+
+	err := global.Pdb.Where("email = ?", email).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("user not found")
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (ur *UserRepo) FindById(id string) (*models.User, error) {
+	var user models.User
+
+	err := global.Pdb.Where("id = ?", id).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("user not found")
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (ur *UserRepo) Create(user *models.User) error {
+	return global.Pdb.Create(user).Error
+}
+
+func (ur *UserRepo) Save(user *models.User) error {
+	return global.Pdb.Save(user).Error
+}

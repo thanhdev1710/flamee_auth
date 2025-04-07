@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/models"
+	"github.com/thanhdev1710/flamee_auth/internal/repo"
 	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -27,19 +28,23 @@ type UserLoginRequest struct {
 	RememberMe bool   `json:"rememberMe"`
 }
 
-type AuthServices struct{}
+type AuthServices struct {
+	userRepo    repo.UserRepo
+	sessionRepo repo.SessionRepo
+}
 
 func NewAuthServices() *AuthServices {
-	return &AuthServices{}
+	return &AuthServices{
+		userRepo:    *repo.NewUserRepo(),
+		sessionRepo: *repo.NewSessionRepo(),
+	}
 }
 
 func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context) (string, error) {
-	var existingUser models.User
-	result := global.Pdb.Where("email = ?", user.Email).First(&existingUser)
-
-	if result.Error == nil {
+	_, err := as.userRepo.FindByEmail(user.Email)
+	if err == nil {
 		return "", errors.New("user already exists")
-	} else if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", errors.New("internal server error")
 	}
 
@@ -56,23 +61,25 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 		Role:     user.Role,
 	}
 
-	if err := global.Pdb.Create(&newUser).Error; err != nil {
+	if err := as.userRepo.Create(&newUser); err != nil {
 		return "", err
 	}
 
-	// Tạo access token
 	timeDefault, err := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
 	if err != nil {
 		return "", err
 	}
-
-	accessToken, err := utils.GenerateToken(&newUser, timeDefault)
+	timeRemember, err := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
 	if err != nil {
 		return "", err
 	}
 
+	// Tạo access token
+	accessToken, err := utils.GenerateToken(&newUser, timeDefault)
+	if err != nil {
+		return "", err
+	}
 	// Auto remember (nếu muốn) sau khi đăng ký
-	timeRemember, _ := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
 	refreshToken, err := utils.GenerateToken(&newUser, timeRemember)
 	if err != nil {
 		return "", err
@@ -86,7 +93,7 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 		ExpiresAt: time.Now().Add(timeRemember),
 	}
 
-	if err := global.Pdb.Create(&session).Error; err != nil {
+	if err := as.sessionRepo.Create(&session); err != nil {
 		return "", err
 	}
 
@@ -97,9 +104,9 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 
 func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (string, error) {
 	// Lấy người dùng từ cơ sở dữ liệu
-	userFromDB := models.User{}
-	if err := global.Pdb.Where("email = ?", user.Email).First(&userFromDB).Error; err != nil {
-		return "", errors.New("user not found")
+	userFromDB, err := as.userRepo.FindByEmail(user.Email)
+	if err != nil {
+		return "", err
 	}
 
 	// Kiểm tra mật khẩu
@@ -109,7 +116,7 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 
 	// Tạo access token
 	timeDefault, _ := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
-	accessToken, err := utils.GenerateToken(&userFromDB, timeDefault)
+	accessToken, err := utils.GenerateToken(userFromDB, timeDefault)
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +124,7 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 	// Nếu có Remember Me thì tạo thêm refresh token và lưu session
 	if user.RememberMe {
 		timeRemember, _ := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
-		refreshToken, err := utils.GenerateToken(&userFromDB, timeRemember)
+		refreshToken, err := utils.GenerateToken(userFromDB, timeRemember)
 		if err != nil {
 			return "", err
 		}
@@ -130,7 +137,7 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 			ExpiresAt: time.Now().Add(timeRemember),
 		}
 
-		if err := global.Pdb.Create(&session).Error; err != nil {
+		if err := as.sessionRepo.Create(&session); err != nil {
 			return "", err
 		}
 
@@ -143,20 +150,15 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 
 func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c *gin.Context) (string, error) {
 	// Kiểm tra trong DB session
-	var session models.Session
-	if err := global.Pdb.Where("user_id = ? AND token = ?", claims.Subject, cookieToken).First(&session).Error; err != nil {
-		return "", errors.New("refresh token expired or invalid")
-	}
-
-	// Kiểm tra xem refresh token có hết hạn không
-	if session.ExpiresAt.Before(time.Now()) {
-		return "", errors.New("refresh token expired")
+	session, err := as.sessionRepo.FindByUserAndToken(claims.Subject, cookieToken)
+	if err != nil {
+		return "", err
 	}
 
 	// Lấy thông tin người dùng từ database
-	var user models.User
-	if err := global.Pdb.First(&user, "id = ?", claims.Subject).Error; err != nil {
-		return "", errors.New("user not found")
+	user, err := as.userRepo.FindById(claims.Subject)
+	if err != nil {
+		return "", err
 	}
 
 	// Tạo access token mới
@@ -164,7 +166,7 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 	if err != nil {
 		return "", errors.New("failed to parse token expiration time")
 	}
-	accessToken, err := utils.GenerateToken(&user, timeDefault)
+	accessToken, err := utils.GenerateToken(user, timeDefault)
 	if err != nil {
 		return "", errors.New("failed to generate access token")
 	}
@@ -174,7 +176,7 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 	if err != nil {
 		return "", errors.New("failed to parse refresh token expiration time")
 	}
-	newRefreshToken, err := utils.GenerateToken(&user, timeRemember)
+	newRefreshToken, err := utils.GenerateToken(user, timeRemember)
 	if err != nil {
 		return "", errors.New("failed to generate refresh token")
 	}
@@ -182,7 +184,7 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 	// Cập nhật refresh token trong session nếu cần
 	session.Token = newRefreshToken
 	session.ExpiresAt = time.Now().Add(timeRemember)
-	if err := global.Pdb.Save(&session).Error; err != nil {
+	if err := as.sessionRepo.Save(session); err != nil {
 		return "", errors.New("failed to update session")
 	}
 

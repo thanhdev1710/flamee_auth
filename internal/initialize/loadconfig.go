@@ -20,6 +20,12 @@ func LoadConfig() {
 	viper.BindEnv("JWT_EXPIRATION_TIME_DEFAULT")
 	viper.BindEnv("JWT_EXPIRATION_TIME_REMEMBER")
 
+	viper.BindEnv("EMAIL_FROM")
+	viper.BindEnv("EMAIL_PASSWORD")
+	viper.BindEnv("EMAIL_SMTPHOST")
+	viper.BindEnv("EMAIL_SMTPPORT")
+	viper.BindEnv("EMAIL_SECRET")
+
 	viper.BindEnv("HOST_DB")
 	viper.BindEnv("PORT_DB")
 	viper.BindEnv("USERNAME_DB")
@@ -35,6 +41,10 @@ func LoadConfig() {
 		log.Fatalf("Cannot unmarshal config: %v", err)
 	}
 	err = viper.Unmarshal(&global.Config.Postgre)
+	if err != nil {
+		log.Fatalf("Cannot unmarshal config: %v", err)
+	}
+	err = viper.Unmarshal(&global.Config.Email)
 	if err != nil {
 		log.Fatalf("Cannot unmarshal config: %v", err)
 	}

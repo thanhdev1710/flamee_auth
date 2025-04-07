@@ -6,6 +6,15 @@ type Config struct {
 	JwtExpirationTimeDefault  string `mapstructure:"JWT_EXPIRATION_TIME_DEFAULT"`
 	JwtExpirationTimeRemember string `mapstructure:"JWT_EXPIRATION_TIME_REMEMBER"`
 	Postgre                   Postgre
+	Email                     Email
+}
+
+type Email struct {
+	Username string `mapstructure:"EMAIL_FROM"`
+	Password string `mapstructure:"EMAIL_PASSWORD"`
+	Host     string `mapstructure:"EMAIL_SMTPHOST"`
+	Port     string `mapstructure:"EMAIL_SMTPPORT"`
+	Secret   string `mapstructure:"EMAIL_SECRET"`
 }
 
 type Postgre struct {

@@ -1,20 +1,26 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/thanhdev1710/flamee_auth/internal/repo"
 	"github.com/thanhdev1710/flamee_auth/internal/services"
 	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 )
 
 type AuthControllers struct {
-	authServices *services.AuthServices
+	authServices  *services.AuthServices
+	emailServices *services.EmailServices
+	userServices  *services.UserServices
 }
 
 func NewAuthControllers() *AuthControllers {
 	return &AuthControllers{
-		authServices: services.NewAuthServices(),
+		authServices:  services.NewAuthServices(),
+		emailServices: services.NewEmailServices(),
+		userServices:  services.NewUserServices(),
 	}
 }
 
@@ -101,5 +107,85 @@ func (ac *AuthControllers) Logout(c *gin.Context) {
 	// Nếu đăng xuất thành công, trả về phản hồi thành công
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged out successfully",
+	})
+}
+
+func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
+	email := c.Param("email")
+	// Kiểm tra xem email có hợp lệ không
+	if email == "" || !utils.IsValidEmail(email) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid or missing email parameter",
+		})
+		return
+	}
+
+	user, err := repo.NewUserRepo().FindByEmail(email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if user.IsVerified {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email already verified",
+		})
+		return
+	}
+
+	token, err := utils.Encrypt(user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate verification token",
+		})
+		return
+	}
+
+	// Tạo URL xác thực chứa token
+	protocol := "http"
+	if c.Request.TLS != nil {
+		protocol = "https"
+	}
+
+	verificationURL := fmt.Sprintf("%s://%s/auth/verify-email/%s", protocol, c.Request.Host, token)
+
+	// Gửi email xác nhận
+	ac.emailServices.SendVerificationEmail(email, verificationURL)
+
+	// Phản hồi về việc gửi email
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Verification email is being sent. Please check your inbox within 24 hours.",
+	})
+}
+
+func (ac *AuthControllers) VerifyEmail(c *gin.Context) {
+	// Lấy token từ tham số trong URL
+	token := c.Param("token")
+
+	// Giải mã token để lấy email
+	email, err := utils.Decrypt(token)
+	if err != nil {
+		// Nếu lỗi giải mã token, trả về lỗi với thông báo tương ứng
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Token không hợp lệ hoặc đã hết hạn",
+		})
+		return
+	}
+
+	// Gọi ConfirmEmail để cập nhật trạng thái xác thực email
+	err = ac.userServices.ConfirmEmail(email)
+	if err != nil {
+		// Nếu có lỗi khi xác thực email, trả về lỗi với thông báo tương ứng
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Nếu email được xác thực thành công, trả về phản hồi thành công
+	c.JSON(http.StatusOK, gin.H{
+		"email":   email,
+		"message": "Email đã được xác thực thành công",
 	})
 }
