@@ -10,8 +10,9 @@ import (
 )
 
 func ProtectRoutes(r *gin.Engine) {
-	protect := r.Group("api/v1").Use(middlewares.AuthMiddleware())
+	protect := r.Group("api/v1").Use(middlewares.AuthMiddleware()).Use(middlewares.VerifyEmail())
 	{
+
 		protect.GET("/me", func(ctx *gin.Context) {
 			// Lấy userId từ context
 			userId := ctx.GetString("userId")
@@ -38,6 +39,16 @@ func ProtectRoutes(r *gin.Engine) {
 
 		})
 
-		protect.GET("/test/:idd", utils.ForwardTo("http://localhost:3000"))
+		protect.POST("/interactions/like/:postId", utils.ForwardTo("http://localhost:3000"))
+		protect.DELETE("/interactions/like/:postId", utils.ForwardTo("http://localhost:3000"))
+		protect.POST("/interactions/comment/:postId", utils.ForwardTo("http://localhost:3000"))
+		protect.DELETE("/interactions/comment/:postId", utils.ForwardTo("http://localhost:3000"))
+		protect.POST("/interactions/share/:postId", utils.ForwardTo("http://localhost:3000"))
+		protect.GET("/interactions/:postId", utils.ForwardTo("http://localhost:3000"))
+
+		protect.POST("/posts", utils.ForwardTo("http://localhost:3000"))
+		protect.PUT("/posts/:id", utils.ForwardTo("http://localhost:3000"))
+		protect.DELETE("/posts/:id", utils.ForwardTo("http://localhost:3000"))
+		protect.GET("/posts/:id", utils.ForwardTo("http://localhost:3000"))
 	}
 }

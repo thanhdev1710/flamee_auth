@@ -69,8 +69,9 @@ func contains(roles []string, role string) bool {
 	return slices.Contains(roles, role)
 }
 
-func VerifyEmail(userId string) gin.HandlerFunc {
+func VerifyEmail() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userId := c.GetString("userId")
 		// Khai báo biến user để lưu dữ liệu người dùng
 		var user models.User
 
@@ -84,12 +85,14 @@ func VerifyEmail(userId string) gin.HandlerFunc {
 				// Nếu có lỗi khác khi truy vấn DB
 				c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
 			}
+			c.Abort()
 			return
 		}
 
 		// Kiểm tra xem người dùng đã xác thực email chưa
 		if !user.IsVerified {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Email not verified"})
+			c.Abort()
 			return
 		}
 

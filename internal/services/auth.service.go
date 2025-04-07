@@ -11,7 +11,6 @@ import (
 	"github.com/thanhdev1710/flamee_auth/internal/repo"
 	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 // UserRegisterRequest là cấu trúc nhận dữ liệu từ client khi đăng ký
@@ -44,8 +43,6 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 	_, err := as.userRepo.FindByEmail(user.Email)
 	if err == nil {
 		return "", errors.New("user already exists")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", errors.New("internal server error")
 	}
 
 	// Mã hóa mật khẩu
