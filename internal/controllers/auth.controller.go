@@ -209,7 +209,7 @@ func (ac *AuthControllers) SendResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Password reset email is being sent. Please check your inbox within 24 hours.",
+		"message": "Password reset email is being sent. Please check your inbox within 30 minute.",
 	})
 }
 
