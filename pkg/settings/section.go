@@ -2,6 +2,7 @@ package settings
 
 type Config struct {
 	Port                      string `mapstructure:"PORT"`
+	ApiKey                    string `mapstructure:"API_KEY"`
 	JwtSecret                 string `mapstructure:"JWT_SECRET"`
 	JwtExpirationTimeDefault  string `mapstructure:"JWT_EXPIRATION_TIME_DEFAULT"`
 	JwtExpirationTimeRemember string `mapstructure:"JWT_EXPIRATION_TIME_REMEMBER"`

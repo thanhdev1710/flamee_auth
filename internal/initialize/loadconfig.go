@@ -15,6 +15,7 @@ func LoadConfig() {
 	}
 
 	viper.BindEnv("PORT")
+	viper.BindEnv("API_KEY")
 
 	viper.BindEnv("JWT_SECRET")
 	viper.BindEnv("JWT_EXPIRATION_TIME_DEFAULT")
