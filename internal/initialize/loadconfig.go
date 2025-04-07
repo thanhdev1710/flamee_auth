@@ -24,6 +24,14 @@ func LoadConfig() {
 	viper.BindEnv("EMAIL_FROM")
 	viper.BindEnv("EMAIL_PASSWORD")
 	viper.BindEnv("EMAIL_SMTPHOST")
+
+	viper.BindEnv("LOG_LEVEL")
+	viper.BindEnv("LOG_FILE")
+	viper.BindEnv("LOG_MAXSIZE")
+	viper.BindEnv("LOG_MAXBACKUPS")
+	viper.BindEnv("LOG_MAXAGE")
+	viper.BindEnv("LOG_COMPRESS")
+
 	viper.BindEnv("EMAIL_SMTPPORT")
 	viper.BindEnv("EMAIL_SECRET")
 
@@ -46,6 +54,10 @@ func LoadConfig() {
 		log.Fatalf("Cannot unmarshal config: %v", err)
 	}
 	err = viper.Unmarshal(&global.Config.Email)
+	if err != nil {
+		log.Fatalf("Cannot unmarshal config: %v", err)
+	}
+	err = viper.Unmarshal(&global.Config.Logger)
 	if err != nil {
 		log.Fatalf("Cannot unmarshal config: %v", err)
 	}

@@ -8,6 +8,16 @@ type Config struct {
 	JwtExpirationTimeRemember string `mapstructure:"JWT_EXPIRATION_TIME_REMEMBER"`
 	Postgre                   Postgre
 	Email                     Email
+	Logger                    Logger
+}
+
+type Logger struct {
+	Level      string `mapstructure:"LOG_LEVEL"`
+	Filename   string `mapstructure:"LOG_FILE"`
+	MaxSize    int    `mapstructure:"LOG_MAXSIZE"`
+	MaxBackups int    `mapstructure:"LOG_MAXBACKUPS"`
+	MaxAge     int    `mapstructure:"LOG_MAXAGE"`
+	Compress   bool   `mapstructure:"LOG_COMPRESS"`
 }
 
 type Email struct {

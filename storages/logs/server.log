@@ -1,0 +1,9 @@
+{"level":"INFO","time":"2025-04-07T18:35:52.801+0700","caller":"initialize/run.go:12","msg":"Config Log ok!!","ok":"success"}
+{"level":"INFO","time":"2025-04-07T18:36:18.686+0700","caller":"initialize/run.go:12","msg":"Config Log ok!!","ok":"success"}
+{"level":"INFO","time":"2025-04-07T18:36:24.927+0700","caller":"initialize/run.go:12","msg":"Config Log ok!!","ok":"success"}
+{"level":"INFO","time":"2025-04-07T18:36:37.819+0700","caller":"initialize/run.go:12","msg":"Config Log ok!!","ok":"success"}
+{"level":"INFO","time":"2025-04-07T18:48:19.751+0700","caller":"middlewares/logger.middleware.go:28","msg":"HTTP Request","status":200,"method":"GET","path":"/api/v1/me","clientIP":"::1","userAgent":"PostmanRuntime/7.43.3","userId":"948f3681-6794-4027-9a03-06b3c7a6ffa9","latency":0.479506084}
+{"level":"INFO","time":"2025-04-07T18:48:23.665+0700","caller":"middlewares/logger.middleware.go:28","msg":"HTTP Request","status":200,"method":"GET","path":"/api/v1/me","clientIP":"::1","userAgent":"PostmanRuntime/7.43.3","userId":"948f3681-6794-4027-9a03-06b3c7a6ffa9","latency":0.326197083}
+{"level":"INFO","time":"2025-04-07T18:48:28.379+0700","caller":"middlewares/logger.middleware.go:28","msg":"HTTP Request","status":200,"method":"GET","path":"/api/v1/me","clientIP":"::1","userAgent":"PostmanRuntime/7.43.3","userId":"948f3681-6794-4027-9a03-06b3c7a6ffa9","latency":0.523685625}
+{"level":"INFO","time":"2025-04-07T18:56:20.943+0700","caller":"middlewares/logger.middleware.go:28","msg":"HTTP Request","status":200,"method":"GET","path":"/api/v1/me","clientIP":"::1","userAgent":"PostmanRuntime/7.43.3","userId":"948f3681-6794-4027-9a03-06b3c7a6ffa9","latency":0.445480458}
+{"level":"INFO","time":"2025-04-07T18:56:22.996+0700","caller":"middlewares/logger.middleware.go:28","msg":"HTTP Request","status":200,"method":"GET","path":"/api/v1/me","clientIP":"::1","userAgent":"PostmanRuntime/7.43.3","userId":"948f3681-6794-4027-9a03-06b3c7a6ffa9","latency":0.405877166}
