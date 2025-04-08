@@ -28,14 +28,14 @@ type UserLoginRequest struct {
 }
 
 type AuthServices struct {
-	userRepo    repo.UserRepo
-	sessionRepo repo.SessionRepo
+	userRepo    *repo.UserRepo
+	sessionRepo *repo.SessionRepo
 }
 
 func NewAuthServices() *AuthServices {
 	return &AuthServices{
-		userRepo:    *repo.NewUserRepo(),
-		sessionRepo: *repo.NewSessionRepo(),
+		userRepo:    repo.NewUserRepo(),
+		sessionRepo: repo.NewSessionRepo(),
 	}
 }
 

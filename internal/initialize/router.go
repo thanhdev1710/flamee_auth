@@ -11,10 +11,15 @@ import (
 )
 
 func InitRouter() *gin.Engine {
+	var r *gin.Engine
 	if global.Config.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
+		r = gin.New()
+	} else {
+		gin.SetMode(gin.DebugMode)
+		gin.ForceConsoleColor()
+		r = gin.Default()
 	}
-	r := gin.Default()
 
 	// 1. Chặn bot / request đáng ngờ (càng sớm càng tốt)
 	r.Use(middlewares.BlockSuspiciousUserAgents())
@@ -42,8 +47,24 @@ func InitRouter() *gin.Engine {
 	r.SetTrustedProxies(nil)
 
 	// 7. Định tuyến
-	routes.AuthRoutes(r)
-	routes.ProtectRoutes(r)
+	adminRouter := routes.RouterGroupApp.Admin
+	userRouter := routes.RouterGroupApp.User
+	authRouter := routes.RouterGroupApp.Auth
+
+	MainGroup := r.Group("/api/v1")
+	{
+		MainGroup.GET("/check-status")
+	}
+	{
+		authRouter.InitAuthRouter(MainGroup)
+	}
+	{
+		userRouter.Post.InitInteractionRouter(MainGroup)
+		userRouter.Post.InitPostRouter(MainGroup)
+	}
+	{
+		adminRouter.Post.InitPostRouter(MainGroup)
+	}
 
 	return r
 }
