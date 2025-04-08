@@ -13,7 +13,6 @@ func (pr *PostRouter) InitPostRouter(Router *gin.RouterGroup) {
 	// Public router
 	PostRouterPublic := Router.Group("/posts")
 	{
-		PostRouterPublic.GET("/")
 		PostRouterPublic.GET("/:id", utils.ForwardTo(global.Url.UrlPostService))
 	}
 	// Private router
