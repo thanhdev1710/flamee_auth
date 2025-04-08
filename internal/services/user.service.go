@@ -40,6 +40,7 @@ func (us *UserServices) ConfirmEmail(email string) error {
 	}
 
 	user.IsVerified = true
+	user.UpdatedAt = time.Now()
 
 	err = us.userRepo.Save(user)
 	if err != nil {

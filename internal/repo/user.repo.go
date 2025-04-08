@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/thanhdev1710/flamee_auth/global"
@@ -51,7 +52,10 @@ func (ur *UserRepo) Save(user *models.User) error {
 }
 
 func (ur *UserRepo) UpdatePassword(userId uuid.UUID, password string) error {
-	if err := global.Pdb.Model(&models.User{}).Where("id = ?", userId).Update("password", password).Error; err != nil {
+	if err := global.Pdb.Model(&models.User{}).Where("id = ?", userId).Updates(map[string]any{
+		"password":   password,
+		"updated_at": time.Now(),
+	}).Error; err != nil {
 		return err
 	}
 	return nil

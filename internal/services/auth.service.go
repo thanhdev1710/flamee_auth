@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -190,9 +191,20 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 }
 
 func (as *AuthServices) LogoutUser(ctx *gin.Context) error {
-	// Xóa cookie của access token và refresh token
+	userIdStr := ctx.GetString("userId")
+
+	// Parse string thành UUID
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		return fmt.Errorf("invalid userId format: %w", err)
+	}
+
 	utils.SetCookiesToken(ctx, "", "", -1, -1)
 
-	// Trả về thông báo logout thành công
+	err = as.sessionRepo.RevokeTokensByUserId(userId)
+	if err != nil {
+		return fmt.Errorf("failed to revoke sessions: %w", err)
+	}
+
 	return nil
 }
