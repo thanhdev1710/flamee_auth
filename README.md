@@ -47,8 +47,8 @@ Built with **Golang**, using **Gin**, **JWT**, and **PostgreSQL**.
 git clone https://github.com/thanhdev1710/flamee_auth.git
 cd flamee_auth
 
-# config your .env or settings.yaml
-cp config/settings.example.yaml config/settings.yaml
+# config your .env
+cp .env
 
 # run
 go run main.go

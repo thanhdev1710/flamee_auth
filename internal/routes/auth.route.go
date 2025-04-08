@@ -13,7 +13,7 @@ func AuthRoutes(r *gin.Engine) {
 	authController := controllers.NewAuthControllers()
 
 	auth.POST("/register",
-		middlewares.RateLimitPerRouteAndIP(1, 30*time.Second, 3), // 1 token mỗi 10s, tối đa 5 token
+		middlewares.RateLimitPerRouteAndIP(1, 30*time.Second, 3),
 		authController.Register,
 	)
 
