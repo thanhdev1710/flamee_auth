@@ -69,7 +69,7 @@ func contains(roles []string, role string) bool {
 	return slices.Contains(roles, role)
 }
 
-func VerifyEmail() gin.HandlerFunc {
+func VerifyAccount() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId := c.GetString("userId")
 		// Khai báo biến user để lưu dữ liệu người dùng
@@ -90,8 +90,8 @@ func VerifyEmail() gin.HandlerFunc {
 		}
 
 		// Kiểm tra xem người dùng đã xác thực email chưa
-		if !user.IsVerified {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Email not verified"})
+		if !user.IsVerified || user.Status != global.User.Active {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Account not verified"})
 			c.Abort()
 			return
 		}

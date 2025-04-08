@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/models"
 	"github.com/thanhdev1710/flamee_auth/internal/repo"
 	"golang.org/x/crypto/bcrypt"
@@ -41,6 +42,7 @@ func (us *UserServices) ConfirmEmail(email string) error {
 
 	user.IsVerified = true
 	user.UpdatedAt = time.Now()
+	user.Status = global.User.Inactive
 
 	err = us.userRepo.Save(user)
 	if err != nil {
@@ -145,6 +147,58 @@ func (us *UserServices) UpdatePassword(token string, password string) error {
 		if err != nil {
 			return err // Trả về lỗi đầu tiên gặp phải
 		}
+	}
+
+	return nil
+}
+
+func (us *UserServices) DeleteAccount(userId string, password string) error {
+	// Tìm user theo ID
+	existingUser, err := us.userRepo.FindById(userId)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(password)); err != nil {
+		return fmt.Errorf("invalid credentials")
+	}
+
+	if existingUser.Status != global.User.Active {
+		return fmt.Errorf("cannot delete account with status: %s", existingUser.Status)
+	}
+
+	// Cập nhật trạng thái user thành "banned"
+	updateData := models.User{
+		Status:    global.User.Banned,
+		UpdatedAt: time.Now(),
+	}
+
+	if err := us.userRepo.Updates(existingUser, updateData); err != nil {
+		return fmt.Errorf("failed to delete account: %w", err)
+	}
+
+	return nil
+}
+
+func (us *UserServices) RestoreAccount(userId string) error {
+	// Tìm user theo ID
+	existingUser, err := us.userRepo.FindById(userId)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	if existingUser.Status == global.User.Deleted {
+		return fmt.Errorf("cannot restore account with status: %s", existingUser.Status)
+	}
+
+	// Cập nhật trạng thái user thành "active"
+	updateData := models.User{
+		Status:    global.User.Active,
+		UpdatedAt: time.Now(),
+	}
+
+	if err := us.userRepo.Updates(existingUser, updateData); err != nil {
+		return fmt.Errorf("failed to delete account: %w", err)
 	}
 
 	return nil

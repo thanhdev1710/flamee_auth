@@ -18,7 +18,7 @@ func (pr *PostRouter) InitPostRouter(Router *gin.RouterGroup) {
 	// Private router
 	PostRouterPrivate := Router.Group("/posts").
 		Use(middlewares.AuthMiddleware()).
-		Use(middlewares.VerifyEmail())
+		Use(middlewares.VerifyAccount())
 	{
 		PostRouterPrivate.POST("/", utils.ForwardTo("http://localhost:3000"))
 		PostRouterPrivate.PUT("/:id", utils.ForwardTo("http://localhost:3000"))

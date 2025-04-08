@@ -54,7 +54,22 @@ func (ur *AuthRouter) InitAuthRouter(Router *gin.RouterGroup) {
 			middlewares.RateLimitPerRouteAndIP(1, 20*time.Second, 3),
 			controllers.NewAuthControllers().ResetPassword,
 		)
+
 	}
 
 	// private router
+	AuthRouterPrivate := Router.Group("/auth").
+		Use(middlewares.AuthMiddleware())
+	{
+		AuthRouterPrivate.POST("/delete-account",
+			middlewares.RateLimitPerRouteAndIP(1, 20*time.Second, 3),
+			middlewares.VerifyAccount(),
+			controllers.NewAuthControllers().DeleteAccount,
+		)
+
+		AuthRouterPrivate.POST("/restore-account",
+			middlewares.RateLimitPerRouteAndIP(1, 20*time.Second, 3),
+			controllers.NewAuthControllers().RestoreAccount,
+		)
+	}
 }

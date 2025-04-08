@@ -235,3 +235,39 @@ func (ac *AuthControllers) ResetPassword(c *gin.Context) {
 		"message": "Password reset was successful",
 	})
 }
+
+type DeleteAccountRequest struct {
+	Password string `json:"password"`
+}
+
+func (ac *AuthControllers) DeleteAccount(c *gin.Context) {
+	userId := c.GetString("userId")
+	var body DeleteAccountRequest
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	if err := ac.userServices.DeleteAccount(userId, body.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Account deleted successfully",
+	})
+}
+
+func (ac *AuthControllers) RestoreAccount(c *gin.Context) {
+	userId := c.GetString("userId")
+
+	if err := ac.userServices.RestoreAccount(userId); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Account restore successfully",
+	})
+}

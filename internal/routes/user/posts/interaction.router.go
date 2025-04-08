@@ -17,7 +17,7 @@ func (ir *InteractionRouter) InitInteractionRouter(Router *gin.RouterGroup) {
 	// Private router
 	InteractionRouterPrivate := Router.Group("/interactions").
 		Use(middlewares.AuthMiddleware()).
-		Use(middlewares.VerifyEmail())
+		Use(middlewares.VerifyAccount())
 	{
 		InteractionRouterPrivate.POST("/like/:postId", utils.ForwardTo("http://localhost:3000"))
 		InteractionRouterPrivate.DELETE("/like/:postId", utils.ForwardTo("http://localhost:3000"))

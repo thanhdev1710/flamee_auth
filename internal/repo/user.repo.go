@@ -51,6 +51,10 @@ func (ur *UserRepo) Save(user *models.User) error {
 	return global.Pdb.Save(user).Error
 }
 
+func (ur *UserRepo) Updates(user *models.User, value any) error {
+	return global.Pdb.Model(user).Updates(value).Error
+}
+
 func (ur *UserRepo) UpdatePassword(userId uuid.UUID, password string) error {
 	if err := global.Pdb.Model(&models.User{}).Where("id = ?", userId).Updates(map[string]any{
 		"password":   password,

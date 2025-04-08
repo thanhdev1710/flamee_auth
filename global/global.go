@@ -10,4 +10,17 @@ var (
 	Config settings.Config
 	Pdb    *gorm.DB
 	Logger *logger.LoggerZap
+	User   = UserStatus{
+		Active:   "active",
+		Inactive: "inactive",
+		Banned:   "banned",
+		Deleted:  "deleted",
+	}
 )
+
+type UserStatus struct {
+	Active   string
+	Inactive string
+	Banned   string
+	Deleted  string
+}
