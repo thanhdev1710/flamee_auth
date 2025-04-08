@@ -2,6 +2,7 @@ package posts
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/middlewares"
 	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 )
@@ -12,17 +13,17 @@ func (ir *InteractionRouter) InitInteractionRouter(Router *gin.RouterGroup) {
 	// Public router
 	InteractionRouterPublic := Router.Group("/interactions")
 	{
-		InteractionRouterPublic.GET("/:postId", utils.ForwardTo("http://localhost:3000"))
+		InteractionRouterPublic.GET("/:postId", utils.ForwardTo(global.Url.UrlPostService))
 	}
 	// Private router
 	InteractionRouterPrivate := Router.Group("/interactions").
 		Use(middlewares.AuthMiddleware()).
 		Use(middlewares.VerifyAccount())
 	{
-		InteractionRouterPrivate.POST("/like/:postId", utils.ForwardTo("http://localhost:3000"))
-		InteractionRouterPrivate.DELETE("/like/:postId", utils.ForwardTo("http://localhost:3000"))
-		InteractionRouterPrivate.POST("/comment/:postId", utils.ForwardTo("http://localhost:3000"))
-		InteractionRouterPrivate.DELETE("/comment/:postId", utils.ForwardTo("http://localhost:3000"))
-		InteractionRouterPrivate.POST("/share/:postId", utils.ForwardTo("http://localhost:3000"))
+		InteractionRouterPrivate.POST("/like/:postId", utils.ForwardTo(global.Url.UrlPostService))
+		InteractionRouterPrivate.DELETE("/like/:postId", utils.ForwardTo(global.Url.UrlPostService))
+		InteractionRouterPrivate.POST("/comment/:postId", utils.ForwardTo(global.Url.UrlPostService))
+		InteractionRouterPrivate.DELETE("/comment/:postId", utils.ForwardTo(global.Url.UrlPostService))
+		InteractionRouterPrivate.POST("/share/:postId", utils.ForwardTo(global.Url.UrlPostService))
 	}
 }

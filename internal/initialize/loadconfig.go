@@ -18,6 +18,8 @@ func LoadConfig() {
 	viper.BindEnv("API_KEY")
 	viper.BindEnv("ENV")
 
+	viper.BindEnv("URL_POST_SERVICE")
+
 	viper.BindEnv("JWT_SECRET")
 	viper.BindEnv("JWT_EXPIRATION_TIME_DEFAULT")
 	viper.BindEnv("JWT_EXPIRATION_TIME_REMEMBER")
@@ -59,6 +61,10 @@ func LoadConfig() {
 		log.Fatalf("Cannot unmarshal config: %v", err)
 	}
 	err = viper.Unmarshal(&global.Config.Logger)
+	if err != nil {
+		log.Fatalf("Cannot unmarshal config: %v", err)
+	}
+	err = viper.Unmarshal(&global.Url)
 	if err != nil {
 		log.Fatalf("Cannot unmarshal config: %v", err)
 	}

@@ -16,6 +16,7 @@ var (
 		Banned:   "banned",
 		Deleted:  "deleted",
 	}
+	Url settings.Url
 )
 
 type UserStatus struct {

@@ -12,6 +12,10 @@ type Config struct {
 	Logger                    Logger
 }
 
+type Url struct {
+	UrlPostService string `mapstructure:"URL_POST_SERVICE"`
+}
+
 type Logger struct {
 	Level      string `mapstructure:"LOG_LEVEL"`
 	Filename   string `mapstructure:"LOG_FILE"`
