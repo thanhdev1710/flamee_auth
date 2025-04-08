@@ -10,39 +10,45 @@ import (
 
 func AuthRoutes(r *gin.Engine) {
 	auth := r.Group("/auth")
+	authController := controllers.NewAuthControllers()
 
 	auth.POST("/register",
-		middlewares.RateLimitPerRouteAndIP(10*time.Second, 1),
-		controllers.NewAuthControllers().Register,
+		middlewares.RateLimitPerRouteAndIP(1, 30*time.Second, 3), // 1 token mỗi 10s, tối đa 5 token
+		authController.Register,
 	)
 
 	auth.POST("/login",
-		middlewares.RateLimitPerRouteAndIP(1000*time.Second, 1),
-		controllers.NewAuthControllers().Login,
+		middlewares.RateLimitPerRouteAndIP(1, 10*time.Second, 5),
+		authController.Login,
 	)
 
 	auth.POST("/refresh-token",
-		middlewares.RateLimitPerRouteAndIP(2*time.Second, 1),
-		controllers.NewAuthControllers().RefreshToken,
+		middlewares.RateLimitPerRouteAndIP(1, 5*time.Second, 10),
+		authController.RefreshToken,
 	)
 
-	auth.POST("/logout", controllers.NewAuthControllers().Logout)
+	auth.POST("/logout",
+		middlewares.RateLimitPerRouteAndIP(1, 5*time.Second, 5),
+		authController.Logout,
+	)
 
 	auth.POST("/send-email/:email",
-		middlewares.RateLimitPerRouteAndIP(20*time.Second, 1),
-		controllers.NewAuthControllers().SendVerifyEmail,
+		middlewares.RateLimitPerRouteAndIP(1, 60*time.Second, 2),
+		authController.SendVerifyEmail,
 	)
 
-	auth.GET("/verify-email/:token", controllers.NewAuthControllers().VerifyEmail)
+	auth.GET("/verify-email/:token",
+		middlewares.RateLimitPerRouteAndIP(1, 60*time.Second, 2),
+		authController.VerifyEmail,
+	)
 
 	auth.POST("/reset-password/:email",
-		middlewares.RateLimitPerRouteAndIP(30*time.Second, 1),
-		controllers.NewAuthControllers().SendResetPassword,
+		middlewares.RateLimitPerRouteAndIP(1, 60*time.Second, 2),
+		authController.SendResetPassword,
 	)
 
 	auth.POST("/change-password/:token",
-		middlewares.RateLimitPerRouteAndIP(15*time.Second, 1),
-		controllers.NewAuthControllers().ResetPassword,
+		middlewares.RateLimitPerRouteAndIP(1, 20*time.Second, 3),
+		authController.ResetPassword,
 	)
-
 }

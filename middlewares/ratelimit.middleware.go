@@ -11,7 +11,20 @@ import (
 
 var buckets = cache.New(10*time.Minute, 1*time.Minute)
 
-func RateLimitPerRouteAndIP(rate time.Duration, capacity int64) gin.HandlerFunc {
+func RateLimitPerRouteAndIP(refillAmount int64, refillInterval time.Duration, capacity int64) gin.HandlerFunc {
+	if refillAmount <= 0 {
+		refillAmount = 1
+	}
+	if refillInterval <= 0 {
+		refillInterval = time.Second
+	}
+	if capacity <= 0 {
+		capacity = 10
+	}
+
+	// Tính khoảng thời gian hồi 1 token
+	fillInterval := refillInterval / time.Duration(refillAmount)
+
 	return func(c *gin.Context) {
 		path := c.FullPath()
 		if path == "" {
@@ -22,14 +35,15 @@ func RateLimitPerRouteAndIP(rate time.Duration, capacity int64) gin.HandlerFunc 
 
 		val, found := buckets.Get(key)
 		if !found {
-			val = ratelimit.NewBucket(rate, capacity)
-			buckets.Set(key, val, cache.DefaultExpiration)
+			bucket := ratelimit.NewBucket(fillInterval, capacity)
+			buckets.Set(key, bucket, cache.DefaultExpiration)
+			val = bucket
 		}
 
 		bucket := val.(*ratelimit.Bucket)
 
 		if bucket.TakeAvailable(1) == 0 {
-			c.Header("Retry-After", strconv.Itoa(int(rate.Seconds())))
+			c.Header("Retry-After", strconv.Itoa(int(fillInterval.Seconds())))
 			c.JSON(429, gin.H{
 				"message": "Too many requests",
 			})
