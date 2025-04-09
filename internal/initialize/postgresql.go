@@ -42,7 +42,7 @@ func SetPool() {
 	p := global.Config.Postgre
 	sqlDb, err := global.Pdb.DB()
 	if err != nil {
-		fmt.Printf("postgreSql error: %s::", err)
+		panic("postgreSql error")
 	}
 	sqlDb.SetConnMaxIdleTime(time.Duration(p.ConnMaxIdleTime))
 	sqlDb.SetConnMaxLifetime(time.Duration(p.ConnMaxLifeTime))
@@ -50,7 +50,6 @@ func SetPool() {
 }
 
 func MigrateTables() {
-	// Tự động migrate các bảng `User`, `Session`, `OAuthProvider`, `VerificationToken`
 	if err := global.Pdb.AutoMigrate(
 		&models.User{},
 		&models.Session{},

@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +17,6 @@ import (
 type UserRegisterRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Role     string `json:"role"`
 }
 
 // UserLoginRequest là cấu trúc nhận dữ liệu từ client khi đăng nhập
@@ -40,10 +38,10 @@ func NewAuthServices() *AuthServices {
 	}
 }
 
-func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context) (string, error) {
+func (as *AuthServices) RegisterUser(user UserRegisterRequest, c *gin.Context) (string, error) {
 	_, err := as.userRepo.FindByEmail(user.Email)
 	if err == nil {
-		return "", errors.New("user already exists")
+		return "", errors.New("tài khoản này đã tồn tại")
 	}
 
 	// Mã hóa mật khẩu
@@ -56,14 +54,13 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 		Id:       uuid.New(),
 		Email:    user.Email,
 		Password: string(hashedPassword),
-		Role:     user.Role,
 	}
 
 	if err := as.userRepo.Create(&newUser); err != nil {
 		return "", err
 	}
 
-	timeDefault, err := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	timeDefault, err := utils.ParseDuration(global.Config.JwtExpirationTimeDefault)
 	if err != nil {
 		return "", err
 	}
@@ -72,12 +69,10 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 		return "", err
 	}
 
-	// Tạo access token
 	accessToken, err := utils.GenerateToken(&newUser, timeDefault)
 	if err != nil {
 		return "", err
 	}
-	// Auto remember (nếu muốn) sau khi đăng ký
 	refreshToken, err := utils.GenerateToken(&newUser, timeRemember)
 	if err != nil {
 		return "", err
@@ -86,8 +81,8 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 	session := models.Session{
 		Token:     refreshToken,
 		UserId:    newUser.Id,
-		UserAgent: ctx.Request.UserAgent(),
-		IpAddress: ctx.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+		IpAddress: c.ClientIP(),
 		ExpiresAt: time.Now().Add(timeRemember),
 	}
 
@@ -96,11 +91,11 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, ctx *gin.Context)
 	}
 
 	// Set token cookie
-	utils.SetCookiesToken(ctx, accessToken, refreshToken, timeDefault, timeRemember)
+	utils.SetCookiesToken(c, accessToken, refreshToken, timeDefault, timeRemember)
 	return accessToken, nil
 }
 
-func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (string, error) {
+func (as *AuthServices) LoginUser(user UserLoginRequest, c *gin.Context) (string, error) {
 	// Lấy người dùng từ cơ sở dữ liệu
 	userFromDB, err := as.userRepo.FindByEmail(user.Email)
 	if err != nil {
@@ -108,12 +103,16 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 	}
 
 	// Kiểm tra mật khẩu
-	if err := bcrypt.CompareHashAndPassword([]byte(userFromDB.Password), []byte(user.Password)); err != nil {
-		return "", errors.New("invalid credentials")
+	if err := utils.CompareHashAndPassword(userFromDB.Password, user.Password); err != nil {
+		return "", err
 	}
 
 	// Tạo access token
-	timeDefault, _ := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	timeDefault, err := utils.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	if err != nil {
+		return "", err
+	}
+
 	accessToken, err := utils.GenerateToken(userFromDB, timeDefault)
 	if err != nil {
 		return "", err
@@ -121,7 +120,11 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 
 	// Nếu có Remember Me thì tạo thêm refresh token và lưu session
 	if user.RememberMe {
-		timeRemember, _ := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
+		timeRemember, err := utils.ParseDuration(global.Config.JwtExpirationTimeRemember)
+		if err != nil {
+			return "", err
+		}
+
 		refreshToken, err := utils.GenerateToken(userFromDB, timeRemember)
 		if err != nil {
 			return "", err
@@ -130,8 +133,8 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 		session := models.Session{
 			Token:     refreshToken,
 			UserId:    userFromDB.Id,
-			UserAgent: ctx.Request.UserAgent(),
-			IpAddress: ctx.ClientIP(),
+			UserAgent: c.Request.UserAgent(),
+			IpAddress: c.ClientIP(),
 			ExpiresAt: time.Now().Add(timeRemember),
 		}
 
@@ -140,7 +143,7 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, ctx *gin.Context) (stri
 		}
 
 		// Set token cookie
-		utils.SetCookiesToken(ctx, accessToken, refreshToken, timeDefault, timeRemember)
+		utils.SetCookiesToken(c, accessToken, refreshToken, timeDefault, timeRemember)
 	}
 
 	return accessToken, nil
@@ -160,51 +163,46 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 	}
 
 	// Tạo access token mới
-	timeDefault, err := time.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	timeDefault, err := utils.ParseDuration(global.Config.JwtExpirationTimeDefault)
 	if err != nil {
-		return "", errors.New("failed to parse token expiration time")
+		return "", err
 	}
 	accessToken, err := utils.GenerateToken(user, timeDefault)
 	if err != nil {
-		return "", errors.New("failed to generate access token")
+		return "", err
 	}
 
 	// Tạo refresh token mới nếu muốn "rotate" refresh token
-	timeRemember, err := time.ParseDuration(global.Config.JwtExpirationTimeRemember)
+	timeRemember, err := utils.ParseDuration(global.Config.JwtExpirationTimeRemember)
 	if err != nil {
-		return "", errors.New("failed to parse refresh token expiration time")
+		return "", err
 	}
 	newRefreshToken, err := utils.GenerateToken(user, timeRemember)
 	if err != nil {
-		return "", errors.New("failed to generate refresh token")
+		return "", err
 	}
 
 	// Cập nhật refresh token trong session nếu cần
 	session.Token = newRefreshToken
 	session.ExpiresAt = time.Now().Add(timeRemember)
+
 	if err := as.sessionRepo.Save(session); err != nil {
-		return "", errors.New("failed to update session")
+		return "", err
 	}
 
 	utils.SetCookiesToken(c, accessToken, newRefreshToken, timeDefault, timeRemember)
 	return accessToken, nil
 }
 
-func (as *AuthServices) LogoutUser(ctx *gin.Context) error {
-	userIdStr := ctx.GetString("userId")
-
+func (as *AuthServices) LogoutUser(c *gin.Context) error {
+	userIdStr := utils.GetUserId(c)
 	// Parse string thành UUID
-	userId, err := uuid.Parse(userIdStr)
+	userId, err := utils.UuidParse(userIdStr)
 	if err != nil {
-		return fmt.Errorf("invalid userId format: %w", err)
+		return err
 	}
 
-	utils.SetCookiesToken(ctx, "", "", -1, -1)
+	utils.SetCookiesToken(c, "", "", -1, -1)
 
-	err = as.sessionRepo.RevokeTokensByUserId(userId)
-	if err != nil {
-		return fmt.Errorf("failed to revoke sessions: %w", err)
-	}
-
-	return nil
+	return as.sessionRepo.RevokeTokensByUserId(userId)
 }

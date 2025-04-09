@@ -30,11 +30,6 @@ func (ur *AuthRouter) InitAuthRouter(Router *gin.RouterGroup) {
 			controllers.NewAuthControllers().RefreshToken,
 		)
 
-		AuthRouterPublic.POST("/logout",
-			middlewares.RateLimitPerRouteAndIP(1, 5*time.Second, 5),
-			controllers.NewAuthControllers().Logout,
-		)
-
 		AuthRouterPublic.POST("/send-email/:email",
 			middlewares.RateLimitPerRouteAndIP(1, 60*time.Second, 2),
 			controllers.NewAuthControllers().SendVerifyEmail,
@@ -61,6 +56,11 @@ func (ur *AuthRouter) InitAuthRouter(Router *gin.RouterGroup) {
 	AuthRouterPrivate := Router.Group("/auth").
 		Use(middlewares.AuthMiddleware())
 	{
+		AuthRouterPrivate.POST("/logout",
+			middlewares.RateLimitPerRouteAndIP(1, 5*time.Second, 5),
+			controllers.NewAuthControllers().Logout,
+		)
+
 		AuthRouterPrivate.POST("/delete-account",
 			middlewares.RateLimitPerRouteAndIP(1, 20*time.Second, 3),
 			middlewares.VerifyAccount(),

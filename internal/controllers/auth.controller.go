@@ -27,18 +27,33 @@ func NewAuthControllers() *AuthControllers {
 func (ac *AuthControllers) Register(c *gin.Context) {
 	var user services.UserRegisterRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
+		return
+	}
+
+	if !utils.IsValidEmail(user.Email) || !utils.IsValidPassword(user.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
 		return
 	}
 
 	token, err := ac.authServices.RegisterUser(user, c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "User registered successfully",
+	c.JSON(http.StatusCreated, gin.H{
+		"status":  "success",
+		"message": "Đăng ký tài khoản thành công",
 		"token":   token,
 	})
 }
@@ -47,20 +62,35 @@ func (ac *AuthControllers) Login(c *gin.Context) {
 
 	var user services.UserLoginRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
+		return
+	}
+
+	if !utils.IsValidEmail(user.Email) || !utils.IsValidPassword(user.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
 		return
 	}
 
 	// Đăng nhập và tạo token
 	token, err := ac.authServices.LoginUser(user, c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
 		return
 	}
 
 	// Trả về token nếu đăng nhập thành công
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
+		"status":  "success",
+		"message": "Đăng nhập thành công",
 		"token":   token,
 	})
 }
@@ -69,26 +99,36 @@ func (ac *AuthControllers) RefreshToken(c *gin.Context) {
 	// Lấy refresh token từ cookie
 	cookieToken, err := c.Cookie("refresh_token")
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Refresh token missing"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "mã thông báo làm mới bị thiếu",
+		})
 		return
 	}
 
 	// Xác thực refresh token
 	claims, err := utils.ValidateToken(cookieToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid refresh token"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
 		return
 	}
 
 	// Gọi AuthService để xử lý logic refresh token
 	accessToken, err := ac.authServices.RefreshToken(cookieToken, claims, c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
 		return
 	}
 
 	// Trả về access token mới
 	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
 		"message": "Refresh token success",
 		"token":   accessToken,
 	})
@@ -100,14 +140,16 @@ func (ac *AuthControllers) Logout(c *gin.Context) {
 	if err != nil {
 		// Nếu có lỗi xảy ra, trả về lỗi với thông báo và mã lỗi phù hợp
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Logout failed: " + err.Error(),
+			"status":  "error",
+			"message": err.Error(),
 		})
 		return
 	}
 
 	// Nếu đăng xuất thành công, trả về phản hồi thành công
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Logged out successfully",
+		"status":  "success",
+		"message": "Đăng xuất thành công",
 	})
 }
 
@@ -116,7 +158,8 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 	// Kiểm tra xem email có hợp lệ không
 	if email == "" || !utils.IsValidEmail(email) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid or missing email parameter",
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
 		})
 		return
 	}
@@ -124,13 +167,15 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 	user, err := repo.NewUserRepo().FindByEmail(email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
+			"status":  "error",
+			"message": err.Error(),
 		})
 		return
 	}
 	if user.IsVerified {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Email already verified",
+			"status":  "error",
+			"message": "Email này đã xác thực",
 		})
 		return
 	}
@@ -138,7 +183,8 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 	token, err := utils.Encrypt(user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to generate verification token",
+			"status":  "error",
+			"message": err.Error(),
 		})
 		return
 	}
@@ -149,14 +195,15 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 		protocol = "https"
 	}
 
-	verificationURL := fmt.Sprintf("%s://%s/auth/verify-email/%s", protocol, c.Request.Host, token)
+	verificationURL := fmt.Sprintf("%s://%s/api/v1/auth/verify-email/%s", protocol, c.Request.Host, token)
 
 	// Gửi email xác nhận
 	ac.emailServices.Send(email, verificationURL, "verification")
 
 	// Phản hồi về việc gửi email
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Verification email is being sent. Please check your inbox within 24 hours.",
+		"status":  "success",
+		"message": "Email xác minh đang được gửi. Vui lòng kiểm tra hộp thư đến của bạn trong vòng 24 giờ.",
 	})
 }
 
@@ -164,12 +211,14 @@ func (ac *AuthControllers) VerifyEmail(c *gin.Context) {
 	// Lấy token từ tham số trong URL
 	token := c.Param("token")
 
+	fmt.Println("Token ::", token)
 	// Giải mã token để lấy email
 	email, err := utils.Decrypt(token)
 	if err != nil {
 		// Nếu lỗi giải mã token, trả về lỗi với thông báo tương ứng
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid or expired token",
+			"status":  "error",
+			"message": err.Error(),
 		})
 		return
 	}
@@ -179,15 +228,17 @@ func (ac *AuthControllers) VerifyEmail(c *gin.Context) {
 	if err != nil {
 		// Nếu có lỗi khi xác thực email, trả về lỗi với thông báo tương ứng
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
+			"status":  "error",
+			"message": err.Error(),
 		})
 		return
 	}
 
 	// Nếu email được xác thực thành công, trả về phản hồi thành công
 	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Xác thực tài khoản thành công",
 		"email":   email,
-		"message": "Email verified successfully",
 	})
 }
 
@@ -196,7 +247,8 @@ func (ac *AuthControllers) SendResetPassword(c *gin.Context) {
 	// Kiểm tra xem email có hợp lệ không
 	if email == "" || !utils.IsValidEmail(email) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid or missing email parameter",
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
 		})
 		return
 	}
@@ -204,13 +256,15 @@ func (ac *AuthControllers) SendResetPassword(c *gin.Context) {
 	err := ac.userServices.SendResetPassword(email, c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"status":  "error",
+			"message": err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Password reset email is being sent. Please check your inbox within 30 minute.",
+		"status":  "success",
+		"message": "Email đặt lại mật khẩu đang được gửi. Vui lòng kiểm tra hộp thư đến của bạn trong vòng 5 phút.",
 	})
 }
 
@@ -222,17 +276,32 @@ func (ac *AuthControllers) ResetPassword(c *gin.Context) {
 	token := c.Param("token")
 	var body ResetPasswordRequest
 	if err := c.ShouldBindJSON(&body); err != nil || body.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
+		return
+	}
+
+	if !utils.IsValidPassword(body.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
 		return
 	}
 
 	err := ac.userServices.UpdatePassword(token, body.Password)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Password reset was successful",
+		"status":  "success",
+		"message": "Đặt lại mật khẩu thành công",
 	})
 }
 
@@ -241,33 +310,41 @@ type DeleteAccountRequest struct {
 }
 
 func (ac *AuthControllers) DeleteAccount(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := utils.GetUserId(c)
 	var body DeleteAccountRequest
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "một số trường chưa hợp lệ, vui lòng kiểm tra lại",
+		})
 		return
 	}
 
 	if err := ac.userServices.DeleteAccount(userId, body.Password); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Account deleted successfully",
+		"status":  "success",
+		"message": "Xoá tài khoản thành công",
 	})
 }
 
 func (ac *AuthControllers) RestoreAccount(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := utils.GetUserId(c)
 
 	if err := ac.userServices.RestoreAccount(userId); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Account restore successfully",
+		"status":  "success",
+		"message": "Khôi phục tài khoản thành công",
 	})
 }

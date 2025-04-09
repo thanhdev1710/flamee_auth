@@ -11,18 +11,18 @@ import (
 func ForwardTo(target string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Lấy userId và role từ context
-		userId := c.GetString("userId")
+		userId := GetUserId(c)
 		role := c.GetString("role")
 
 		// Kiểm tra nếu không tìm thấy userId hoặc role trong context
 		if userId == "" || role == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "User ID or Role not found in context"})
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Không tìm thấy User ID hoặc quyền trong context"})
 			return
 		}
 
 		remote, err := url.Parse(target)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid target URL"})
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "URL đích không hợp lệ"})
 			return
 		}
 
@@ -32,7 +32,7 @@ func ForwardTo(target string) gin.HandlerFunc {
 		c.Request.URL.Scheme = remote.Scheme
 		c.Request.URL.Host = remote.Host
 
-		// Optionally: chỉnh lại Host header cho đúng server đích (nếu phía sau kiểm tra host)
+		// Tùy chọn: chỉnh lại Host header cho đúng server đích
 		c.Request.Host = remote.Host
 
 		// Thêm userId và role vào header yêu cầu

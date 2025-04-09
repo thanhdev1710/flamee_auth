@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/models"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -17,33 +18,43 @@ func NewSessionRepo() *SessionRepo {
 }
 
 func (sr *SessionRepo) Create(session *models.Session) error {
-	return global.Pdb.Create(session).Error
+	if err := global.Pdb.Create(session).Error; err != nil {
+		global.Logger.Error("Lỗi khi tạo session", zap.Error(err))
+		return errors.New("lỗi máy chủ, vui lòng thử lại sau")
+	}
+	return nil
 }
 
 func (sr *SessionRepo) Save(session *models.Session) error {
-	return global.Pdb.Save(session).Error
+	if err := global.Pdb.Save(session).Error; err != nil {
+		global.Logger.Error("Lỗi khi lưu session", zap.Error(err))
+		return errors.New("lỗi máy chủ, vui lòng thử lại sau")
+	}
+	return nil
 }
 
 func (sr *SessionRepo) FindByUserAndToken(userId, token string) (*models.Session, error) {
 	var session models.Session
-	err := global.Pdb.Where("user_id = ? AND token = ?").First(&session).Error
+	err := global.Pdb.Where("user_id = ? AND token = ?", userId, token).First(&session).Error
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.New("refresh token invalid")
+		return nil, errors.New("refresh token không hợp lệ")
 	} else if err != nil {
-		return nil, err
+		global.Logger.Error("Lỗi khi tìm session theo userId và token", zap.Error(err))
+		return nil, errors.New("lỗi máy chủ, vui lòng thử lại sau")
 	}
 
 	if session.ExpiresAt.Before(time.Now()) {
-		return nil, errors.New("refresh token expired")
+		return nil, errors.New("refresh token đã hết hạn")
 	}
 
 	return &session, nil
 }
 
 func (sr *SessionRepo) RevokeTokensByUserId(userId uuid.UUID) error {
-	// Xóa tất cả session của người dùng
 	if err := global.Pdb.Where("user_id = ?", userId).Delete(&models.Session{}).Error; err != nil {
-		return errors.New("failed to revoke tokens")
+		global.Logger.Error("Lỗi khi thu hồi tất cả phiên đăng nhập của người dùng", zap.Error(err), zap.String("user_id", userId.String()))
+		return errors.New("lỗi máy chủ, không thể thu hồi token")
 	}
 	return nil
 }

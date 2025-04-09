@@ -11,7 +11,7 @@ import (
 	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/models"
 	"github.com/thanhdev1710/flamee_auth/internal/repo"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 )
 
 type UserServices struct {
@@ -37,12 +37,12 @@ func (us *UserServices) ConfirmEmail(email string) error {
 	}
 
 	if user.IsVerified {
-		return errors.New("email already verified")
+		return errors.New("tài khoản này đã xác thực")
 	}
 
 	user.IsVerified = true
+	user.Status = global.User.Active
 	user.UpdatedAt = time.Now()
-	user.Status = global.User.Inactive
 
 	err = us.userRepo.Save(user)
 	if err != nil {
@@ -58,11 +58,9 @@ func (us *UserServices) SendResetPassword(email string, c *gin.Context) error {
 		return err
 	}
 
-	token := uuid.New().String()
-
 	verificationToken := models.VerificationToken{
 		UserId:    user.Id,
-		Token:     token,
+		Token:     uuid.New().String(),
 		TokenType: "password_reset",
 		ExpiresAt: time.Now().Add(30 * time.Minute),
 	}
@@ -78,7 +76,7 @@ func (us *UserServices) SendResetPassword(email string, c *gin.Context) error {
 		protocol = "https"
 	}
 
-	verificationURL := fmt.Sprintf("%s://%s/auth/change-password/%s", protocol, c.Request.Host, token)
+	verificationURL := fmt.Sprintf("%s://%s/api/v1/auth/change-password/%s", protocol, c.Request.Host, verificationToken.Token)
 
 	// Gửi email xác nhận
 	us.emailServices.Send(email, verificationURL, "password_reset")
@@ -89,16 +87,16 @@ func (us *UserServices) UpdatePassword(token string, password string) error {
 	// Tìm token trong repository
 	vToken, err := us.verificationTokenRepo.FindByToken(token, "password_reset")
 	if err != nil {
-		return errors.New("invalid token")
+		return err
 	}
 
 	// Kiểm tra thời gian hết hạn của token
 	if time.Now().After(vToken.ExpiresAt) {
-		return errors.New("token has expired")
+		return errors.New("token đã hết hạn")
 	}
 
 	// Mã hóa mật khẩu mới
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := utils.GenerateFromPassword(password)
 	if err != nil {
 		return err
 	}
@@ -116,7 +114,7 @@ func (us *UserServices) UpdatePassword(token string, password string) error {
 		defer wg.Done()
 		err := us.userRepo.UpdatePassword(userId, string(hashedPassword))
 		if err != nil {
-			errCh <- fmt.Errorf("failed to update password: %w", err)
+			errCh <- err
 		}
 	}()
 
@@ -125,7 +123,7 @@ func (us *UserServices) UpdatePassword(token string, password string) error {
 		defer wg.Done()
 		err := us.verificationTokenRepo.Delete(vToken)
 		if err != nil {
-			errCh <- fmt.Errorf("failed to delete verification token: %w", err)
+			errCh <- err
 		}
 	}()
 
@@ -134,7 +132,7 @@ func (us *UserServices) UpdatePassword(token string, password string) error {
 		defer wg.Done()
 		err := us.sessionRepo.RevokeTokensByUserId(userId)
 		if err != nil {
-			errCh <- fmt.Errorf("failed to revoke sessions: %w", err)
+			errCh <- err
 		}
 	}()
 
@@ -156,25 +154,27 @@ func (us *UserServices) DeleteAccount(userId string, password string) error {
 	// Tìm user theo ID
 	existingUser, err := us.userRepo.FindById(userId)
 	if err != nil {
-		return fmt.Errorf("user not found: %w", err)
+		return err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(password)); err != nil {
-		return fmt.Errorf("invalid credentials")
+	if err := utils.CompareHashAndPassword(existingUser.Password, password); err != nil {
+		return err
 	}
 
 	if existingUser.Status != global.User.Active {
-		return fmt.Errorf("cannot delete account with status: %s", existingUser.Status)
+		return fmt.Errorf("không thể khôi phục tài khoản với trạng thái: %s", existingUser.Status)
 	}
 
 	// Cập nhật trạng thái user thành "banned"
+	now := time.Now()
 	updateData := models.User{
 		Status:    global.User.Banned,
-		UpdatedAt: time.Now(),
+		UpdatedAt: now,
+		DeletedAt: &now,
 	}
 
 	if err := us.userRepo.Updates(existingUser, updateData); err != nil {
-		return fmt.Errorf("failed to delete account: %w", err)
+		return fmt.Errorf("xoá tài khoản thất bại: %w", err)
 	}
 
 	return nil
@@ -184,21 +184,22 @@ func (us *UserServices) RestoreAccount(userId string) error {
 	// Tìm user theo ID
 	existingUser, err := us.userRepo.FindById(userId)
 	if err != nil {
-		return fmt.Errorf("user not found: %w", err)
+		return err
 	}
 
-	if existingUser.Status == global.User.Deleted {
-		return fmt.Errorf("cannot restore account with status: %s", existingUser.Status)
+	if existingUser.Status != global.User.Banned {
+		return fmt.Errorf("không thể khôi phục tài khoản với trạng thái: %s", existingUser.Status)
 	}
 
 	// Cập nhật trạng thái user thành "active"
 	updateData := models.User{
 		Status:    global.User.Active,
 		UpdatedAt: time.Now(),
+		DeletedAt: nil,
 	}
 
 	if err := us.userRepo.Updates(existingUser, updateData); err != nil {
-		return fmt.Errorf("failed to delete account: %w", err)
+		return err
 	}
 
 	return nil

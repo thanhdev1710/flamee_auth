@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/thanhdev1710/flamee_auth/global"
+	"github.com/thanhdev1710/flamee_auth/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -23,7 +24,7 @@ func RequestLogger() gin.HandlerFunc {
 		clientIP := c.ClientIP()
 		userAgent := c.Request.UserAgent()
 
-		userId := c.GetString("userId")
+		userId := utils.GetUserId(c)
 
 		global.Logger.Info("HTTP Request",
 			zap.Int("status", statusCode),

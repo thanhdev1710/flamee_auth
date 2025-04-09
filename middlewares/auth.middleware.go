@@ -13,15 +13,15 @@ import (
 )
 
 func AuthMiddleware() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		authHeader := ctx.GetHeader("Authorization")
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
 		parts := strings.Split(authHeader, " ")
 
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
+			c.JSON(http.StatusUnauthorized, gin.H{
 				"message": "Invalid Authorization header format",
 			})
-			ctx.Abort()
+			c.Abort()
 			return
 		}
 
@@ -30,17 +30,17 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Kiểm tra token hợp lệ
 		claims, err := utils.ValidateToken(tokenStr)
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
+			c.JSON(http.StatusUnauthorized, gin.H{
 				"message": err.Error(),
 			})
-			ctx.Abort()
+			c.Abort()
 			return
 		}
 
-		ctx.Set("userId", claims.Subject)
-		ctx.Set("role", claims.Role)
+		c.Set("userId", claims.Subject)
+		c.Set("role", claims.Role)
 
-		ctx.Next()
+		c.Next()
 	}
 }
 
@@ -53,7 +53,8 @@ func RoleRequired(roles []string) gin.HandlerFunc {
 		if !contains(roles, role) {
 			// Nếu không có quyền truy cập, trả về lỗi 403 (Forbidden)
 			c.JSON(http.StatusForbidden, gin.H{
-				"message": "You do not have permission to access this resource",
+				"status":  "error",
+				"message": "Bạn không có quyền truy cập",
 			})
 			c.Abort() // Ngừng tiếp tục xử lý request
 			return
@@ -71,7 +72,7 @@ func contains(roles []string, role string) bool {
 
 func VerifyAccount() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userId := c.GetString("userId")
+		userId := utils.GetUserId(c)
 		// Khai báo biến user để lưu dữ liệu người dùng
 		var user models.User
 
@@ -80,10 +81,10 @@ func VerifyAccount() gin.HandlerFunc {
 		if err != nil {
 			// Nếu lỗi là không tìm thấy người dùng
 			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+				c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Không tìm thấy tài khoản"})
 			} else {
 				// Nếu có lỗi khác khi truy vấn DB
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "Database error"})
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Lỗi server"})
 			}
 			c.Abort()
 			return
@@ -91,7 +92,7 @@ func VerifyAccount() gin.HandlerFunc {
 
 		// Kiểm tra xem người dùng đã xác thực email chưa
 		if !user.IsVerified || user.Status != global.User.Active {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Account not verified"})
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": "Tài khoản này chưa xác thực hoặc đã xoá"})
 			c.Abort()
 			return
 		}
