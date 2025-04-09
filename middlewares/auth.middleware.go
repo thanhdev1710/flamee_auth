@@ -39,6 +39,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		c.Set("userId", claims.Subject)
 		c.Set("role", claims.Role)
+		c.Set("jwt", authHeader)
 
 		c.Next()
 	}

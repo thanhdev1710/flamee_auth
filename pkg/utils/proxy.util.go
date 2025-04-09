@@ -10,35 +10,37 @@ import (
 
 func ForwardTo(target string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Lấy userId và role từ context
-		userId := GetUserId(c)
-		role := c.GetString("role")
-
-		// Kiểm tra nếu không tìm thấy userId hoặc role trong context
-		if userId == "" || role == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Không tìm thấy User ID hoặc quyền trong context"})
+		// Lấy JWT từ context
+		jwtToken := c.GetString("jwt")
+		if jwtToken == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
+				"message": "Không tìm thấy JWT trong context",
+			})
 			return
 		}
 
+		// Parse URL đích
 		remote, err := url.Parse(target)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "URL đích không hợp lệ"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "URL đích không hợp lệ",
+			})
 			return
 		}
 
 		proxy := httputil.NewSingleHostReverseProxy(remote)
 
-		// Cập nhật scheme và host, giữ nguyên Path và Query gốc
+		// Cập nhật scheme và host
 		c.Request.URL.Scheme = remote.Scheme
 		c.Request.URL.Host = remote.Host
+		c.Request.Host = remote.Host // nếu cần kiểm tra Host header phía sau
 
-		// Tùy chọn: chỉnh lại Host header cho đúng server đích
-		c.Request.Host = remote.Host
+		// Gắn lại Authorization header
+		c.Request.Header.Set("Authorization", jwtToken)
 
-		// Thêm userId và role vào header yêu cầu
-		c.Request.Header.Add("userId", userId)
-		c.Request.Header.Add("role", role)
-
+		// Forward request
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
