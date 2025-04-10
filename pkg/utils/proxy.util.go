@@ -15,11 +15,10 @@ func ForwardTo(target string) gin.HandlerFunc {
 		if jwtToken == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
-				"message": "Không tìm thấy JWT trong context",
+				"message": "Vui lòng đăng nhập",
 			})
 			return
 		}
-
 		// Parse URL đích
 		remote, err := url.Parse(target)
 		if err != nil {
@@ -36,7 +35,6 @@ func ForwardTo(target string) gin.HandlerFunc {
 		c.Request.URL.Scheme = remote.Scheme
 		c.Request.URL.Host = remote.Host
 		c.Request.Host = remote.Host // nếu cần kiểm tra Host header phía sau
-
 		// Gắn lại Authorization header
 		c.Request.Header.Set("Authorization", jwtToken)
 

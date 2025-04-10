@@ -15,9 +15,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// Secret key để ký JWT (trong thực tế bạn nên lưu trữ trong biến môi trường hoặc cấu hình)
-var jwtSecret = []byte(global.Config.JwtSecret)
-
 // Tạo JWT token mới
 func GenerateToken(user *models.User, parsedExpirationTime time.Duration) (string, error) {
 	claims := &Claims{
@@ -31,8 +28,9 @@ func GenerateToken(user *models.User, parsedExpirationTime time.Duration) (strin
 	}
 
 	// Tạo token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString(jwtSecret)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+	signedToken, err := token.SignedString([]byte(global.Config.JwtSecret))
+
 	if err != nil {
 		return "", errors.New("lỗi khi tạo token")
 	}
@@ -41,29 +39,27 @@ func GenerateToken(user *models.User, parsedExpirationTime time.Duration) (strin
 }
 
 func ValidateToken(tokenStr string) (*Claims, error) {
-	// Parse và xác thực token
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (any, error) {
-		// Kiểm tra kiểu signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("phương thức ký không hợp lệ")
 		}
-		return jwtSecret, nil
+		return []byte(global.Config.JwtSecret), nil
 	})
 
 	if err != nil || !token.Valid {
 		return nil, errors.New("token không hợp lệ hoặc bị lỗi")
 	}
 
-	// Trả về claims nếu token hợp lệ
-	if claims, ok := token.Claims.(*Claims); ok {
-		// Kiểm tra thời gian hết hạn của token
-		if claims.ExpiresAt.Before(time.Now()) {
-			return nil, errors.New("token đã hết hạn")
-		}
-		return claims, nil
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return nil, errors.New("thông tin trong token không hợp lệ")
 	}
 
-	return nil, errors.New("thông tin trong token không hợp lệ")
+	if claims.ExpiresAt.Before(time.Now()) {
+		return nil, errors.New("token đã hết hạn")
+	}
+
+	return claims, nil
 }
 
 func ParseDuration(timeStr string) (time.Duration, error) {
