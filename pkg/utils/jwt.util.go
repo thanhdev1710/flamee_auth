@@ -11,14 +11,16 @@ import (
 )
 
 type Claims struct {
-	Role string `json:"role"`
+	Role  string `json:"role"`
+	Email string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 // Tạo JWT token mới
 func GenerateToken(user *models.User, parsedExpirationTime time.Duration) (string, error) {
 	claims := &Claims{
-		Role: user.Role,
+		Role:  user.Role,
+		Email: user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.Id.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(parsedExpirationTime)), // Token hết hạn sau 24 giờ

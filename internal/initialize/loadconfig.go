@@ -19,6 +19,7 @@ func LoadConfig() {
 	viper.BindEnv("ENV")
 
 	viper.BindEnv("URL_POST_SERVICE")
+	viper.BindEnv("URL_USER_SERVICE")
 
 	viper.BindEnv("JWT_SECRET")
 	viper.BindEnv("JWT_EXPIRATION_TIME_DEFAULT")

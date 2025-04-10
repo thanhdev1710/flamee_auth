@@ -57,13 +57,12 @@ func InitRouter() *gin.Engine {
 	}
 	{
 		authRouter.InitAuthRouter(MainGroup)
+		adminRouter.Post.InitPostRouter(MainGroup)
 	}
 	{
 		userRouter.Post.InitInteractionRouter(MainGroup)
 		userRouter.Post.InitPostRouter(MainGroup)
-	}
-	{
-		adminRouter.Post.InitPostRouter(MainGroup)
+		userRouter.Profile.InitProfileRouter(MainGroup)
 	}
 
 	return r

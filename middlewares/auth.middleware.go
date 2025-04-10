@@ -19,7 +19,8 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"message": "Invalid Authorization header format",
+				"status":  "error",
+				"message": "Vui lòng đăng nhập",
 			})
 			c.Abort()
 			return
@@ -31,6 +32,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		claims, err := utils.ValidateToken(tokenStr)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
 				"message": err.Error(),
 			})
 			c.Abort()
