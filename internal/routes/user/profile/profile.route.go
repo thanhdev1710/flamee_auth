@@ -22,7 +22,13 @@ func (pr *ProfileRouter) InitProfileRouter(Router *gin.RouterGroup) {
 		ProfileRouterPrivate.GET("/", utils.ForwardTo(global.Url.UrlUserService))
 		ProfileRouterPrivate.POST("/", utils.ForwardTo(global.Url.UrlUserService))
 		ProfileRouterPrivate.PUT("/", utils.ForwardTo(global.Url.UrlUserService))
-		ProfileRouterPrivate.GET("/search-username/:keyword", utils.ForwardTo(global.Url.UrlUserService))
+
+		ProfileRouterPrivate.GET("/online/:userId", utils.ForwardTo(global.Url.UrlUserService))
+		ProfileRouterPrivate.POST("/online", utils.ForwardTo(global.Url.UrlUserService))
+
+		ProfileRouterPrivate.GET("/search", utils.ForwardTo(global.Url.UrlUserService))
+		ProfileRouterPrivate.GET("/search/:keyword", utils.ForwardTo(global.Url.UrlUserService))
+
 		ProfileRouterPrivate.GET("/suggest-username/:base", utils.ForwardTo(global.Url.UrlUserService))
 	}
 }
