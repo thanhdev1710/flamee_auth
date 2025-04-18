@@ -13,6 +13,7 @@ type Config struct {
 }
 
 type Url struct {
+	UrlFrontEnd    string `mapstructure:"URL_FRONT_END"`
 	UrlPostService string `mapstructure:"URL_POST_SERVICE"`
 	UrlUserService string `mapstructure:"URL_USER_SERVICE"`
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/thanhdev1710/flamee_auth/global"
 	"github.com/thanhdev1710/flamee_auth/internal/repo"
 	"github.com/thanhdev1710/flamee_auth/internal/services"
 	"github.com/thanhdev1710/flamee_auth/pkg/utils"
@@ -190,12 +191,8 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 	}
 
 	// Tạo URL xác thực chứa token
-	protocol := "http"
-	if c.Request.TLS != nil {
-		protocol = "https"
-	}
 
-	verificationURL := fmt.Sprintf("%s://%s/api/v1/auth/verify-email/%s", protocol, c.Request.Host, token)
+	verificationURL := fmt.Sprintf("%s/auth/verify-email/%s", global.Url.UrlFrontEnd, token)
 
 	// Gửi email xác nhận
 	ac.emailServices.Send(email, verificationURL, "verification")
@@ -270,10 +267,10 @@ func (ac *AuthControllers) SendResetPassword(c *gin.Context) {
 
 type ResetPasswordRequest struct {
 	Password string `json:"password"`
+	Token    string `json:"token"`
 }
 
 func (ac *AuthControllers) ResetPassword(c *gin.Context) {
-	token := c.Param("token")
 	var body ResetPasswordRequest
 	if err := c.ShouldBindJSON(&body); err != nil || body.Password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -291,7 +288,7 @@ func (ac *AuthControllers) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	err := ac.userServices.UpdatePassword(token, body.Password)
+	err := ac.userServices.UpdatePassword(body.Token, body.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",

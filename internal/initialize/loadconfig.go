@@ -18,6 +18,7 @@ func LoadConfig() {
 	viper.BindEnv("API_KEY")
 	viper.BindEnv("ENV")
 
+	viper.BindEnv("URL_FRONT_END")
 	viper.BindEnv("URL_POST_SERVICE")
 	viper.BindEnv("URL_USER_SERVICE")
 

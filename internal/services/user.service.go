@@ -71,13 +71,8 @@ func (us *UserServices) SendResetPassword(email string, c *gin.Context) error {
 	}
 
 	// Tạo URL xác thực chứa token
-	protocol := "http"
-	if c.Request.TLS != nil {
-		protocol = "https"
-	}
-
-	verificationURL := fmt.Sprintf("%s://%s/api/v1/auth/change-password/%s", protocol, c.Request.Host, verificationToken.Token)
-
+	verificationURL := fmt.Sprintf("%s/auth/reset-password/%s", global.Url.UrlFrontEnd, verificationToken.Token)
+	fmt.Println(verificationURL)
 	// Gửi email xác nhận
 	us.emailServices.Send(email, verificationURL, "password_reset")
 	return nil
