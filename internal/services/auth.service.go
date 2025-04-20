@@ -91,7 +91,7 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, c *gin.Context) (
 	}
 
 	// Set token cookie
-	utils.SetCookiesToken(c.Writer, accessToken, refreshToken, timeDefault, timeRemember)
+	utils.SetCookiesToken(c, accessToken, refreshToken, timeDefault, timeRemember)
 	return accessToken, nil
 }
 
@@ -119,6 +119,8 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, c *gin.Context) (string
 	}
 
 	// Nếu có Remember Me thì tạo thêm refresh token và lưu session
+	var timeRememberTmp time.Duration
+	var refreshTokenTmp string
 	if user.RememberMe {
 		timeRemember, err := utils.ParseDuration(global.Config.JwtExpirationTimeRemember)
 		if err != nil {
@@ -142,10 +144,12 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, c *gin.Context) (string
 			return "", err
 		}
 
-		// Set token cookie
-		utils.SetCookiesToken(c.Writer, accessToken, refreshToken, timeDefault, timeRemember)
+		timeRememberTmp = timeRemember
+		refreshTokenTmp = refreshToken
 	}
 
+	// Set token cookie
+	utils.SetCookiesToken(c, accessToken, refreshTokenTmp, timeDefault, timeRememberTmp)
 	return accessToken, nil
 }
 
@@ -190,7 +194,7 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 		return "", err
 	}
 
-	utils.SetCookiesToken(c.Writer, accessToken, newRefreshToken, timeDefault, timeRemember)
+	utils.SetCookiesToken(c, accessToken, newRefreshToken, timeDefault, timeRemember)
 	return accessToken, nil
 }
 
@@ -202,7 +206,7 @@ func (as *AuthServices) LogoutUser(c *gin.Context) error {
 		return err
 	}
 
-	utils.SetCookiesToken(c.Writer, "", "", -1, -1)
+	utils.SetCookiesToken(c, "", "", -1, -1)
 
 	return as.sessionRepo.RevokeTokensByUserId(userId)
 }

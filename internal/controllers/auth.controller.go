@@ -52,6 +52,11 @@ func (ac *AuthControllers) Register(c *gin.Context) {
 		return
 	}
 
+	// Tạo URL xác thực chứa token
+	verificationURL := fmt.Sprintf("%s/auth/verify-email/%s", global.Url.UrlFrontEnd, token)
+	// Gửi email xác nhận
+	ac.emailServices.Send(user.Email, verificationURL, "verification")
+
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  "success",
 		"message": "Đăng ký tài khoản thành công",

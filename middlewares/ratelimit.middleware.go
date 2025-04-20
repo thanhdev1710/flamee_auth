@@ -45,7 +45,8 @@ func RateLimitPerRouteAndIP(refillAmount int64, refillInterval time.Duration, ca
 		if bucket.TakeAvailable(1) == 0 {
 			c.Header("Retry-After", strconv.Itoa(int(fillInterval.Seconds())))
 			c.JSON(429, gin.H{
-				"message": "Too many requests",
+				"status":  "error",
+				"message": "Quá nhiều yêu cầu",
 			})
 			c.Abort()
 			return
