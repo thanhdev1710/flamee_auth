@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,10 +25,29 @@ func GetRole(c *gin.Context) string {
 	return ""
 }
 
-func SetCookiesToken(c *gin.Context, accessToken, refreshToken string, timeDefault, timeRemember time.Duration) {
-	// Thiết lập cookie cho access token
-	c.SetCookie("access_token", accessToken, int(timeDefault.Seconds()), "/", "localhost", true, true)
+func SetCookiesToken(w http.ResponseWriter, accessToken, refreshToken string, timeDefault, timeRemember time.Duration) {
+	// ⚠️ Thay bằng domain backend thật sự khi deploy
+	const backendDomain = "api.flamee.vn"
 
-	// Thiết lập cookie cho refresh token
-	c.SetCookie("refresh_token", refreshToken, int(timeRemember.Seconds()), "/", "localhost", true, true)
+	http.SetCookie(w, &http.Cookie{
+		Name:     HexString("flamee_access_token"),
+		Value:    accessToken,
+		Path:     "/",
+		Domain:   backendDomain,
+		MaxAge:   int(timeDefault.Seconds()),
+		HttpOnly: true,
+		Secure:   true,                  // ✅ Bắt buộc khi dùng HTTPS
+		SameSite: http.SameSiteNoneMode, // ✅ Cho phép cookie cross-domain
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     HexString("flamee_refresh_token"),
+		Value:    refreshToken,
+		Path:     "/",
+		Domain:   backendDomain,
+		MaxAge:   int(timeRemember.Seconds()),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
 }

@@ -91,3 +91,7 @@ func GenerateFromPassword(password string) (string, error) {
 
 	return string(hashedPassword), nil
 }
+
+func HexString(str string) string {
+	return hex.EncodeToString([]byte(str))
+}

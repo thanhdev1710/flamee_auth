@@ -32,9 +32,9 @@ func InitRouter() *gin.Engine {
 
 	// 4. CORS - nên đặt trước mọi route logic
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://yourtrustedwebsite.com"},
+		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-API-KEY"},
 		ExposeHeaders:    []string{"X-Total-Count"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,

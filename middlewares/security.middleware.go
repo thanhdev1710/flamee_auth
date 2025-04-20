@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 
@@ -30,13 +31,13 @@ func BlockSuspiciousUserAgents() gin.HandlerFunc {
 	// Một vài regex pattern đơn giản (tối ưu theo danh sách dài bạn đưa)
 	patterns := []string{
 		`(?i)curl`, `(?i)wget`, `(?i)httpie`, `(?i)python`, `(?i)go-http-client`,
-		`(?i)java`, `(?i)libwww-perl`, `(?i)lynx`, `(?i)scrapy`, `(?i)node`,
+		`(?i)java`, `(?i)libwww-perl`, `(?i)lynx`, `(?i)scrapy`,
 		`(?i)phantomjs`, `(?i)headlesschrome`, `(?i)sqlmap`, `(?i)nikto`, `(?i)nmap`,
 		`(?i)zap`, `(?i)fuzz`, `(?i)bot`, `(?i)spider`,
 		`(?i)crawler`, `(?i)masscan`, `(?i)scan`, `(?i)grab`, `(?i)fetch`,
 	}
 
-	// , `(?i)postmanruntime`
+	// , `(?i)postmanruntime` , `(?i)node`
 
 	var regexList []*regexp.Regexp
 	for _, p := range patterns {
@@ -46,6 +47,7 @@ func BlockSuspiciousUserAgents() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ua := c.GetHeader("User-Agent")
+		fmt.Println(ua)
 		if ua == "" {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"message": "Access denied: missing User-Agent",
