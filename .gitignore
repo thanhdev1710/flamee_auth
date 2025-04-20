@@ -1,5 +1,5 @@
 .env*
 gen.yaml
-flamee_auth
+*.exe
 storages/
 .vscode
