@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/thanhdev1710/flamee_auth/global"
 )
 
 // GetUserId lấy thông tin userId từ context
@@ -27,13 +28,12 @@ func GetRole(c *gin.Context) string {
 
 func SetCookiesToken(w http.ResponseWriter, accessToken, refreshToken string, timeDefault, timeRemember time.Duration) {
 	// ⚠️ Thay bằng domain backend thật sự khi deploy
-	const backendDomain = "api.flamee.vn"
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     HexString("flamee_access_token"),
 		Value:    accessToken,
 		Path:     "/",
-		Domain:   backendDomain,
+		Domain:   global.Config.Domain,
 		MaxAge:   int(timeDefault.Seconds()),
 		HttpOnly: true,
 		Secure:   true,                  // ✅ Bắt buộc khi dùng HTTPS
@@ -44,7 +44,7 @@ func SetCookiesToken(w http.ResponseWriter, accessToken, refreshToken string, ti
 		Name:     HexString("flamee_refresh_token"),
 		Value:    refreshToken,
 		Path:     "/",
-		Domain:   backendDomain,
+		Domain:   global.Config.Domain,
 		MaxAge:   int(timeRemember.Seconds()),
 		HttpOnly: true,
 		Secure:   true,
