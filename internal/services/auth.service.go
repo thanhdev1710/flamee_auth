@@ -155,7 +155,7 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, c *gin.Context) (string
 
 func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c *gin.Context) (string, error) {
 	// Kiểm tra trong DB session
-	session, err := as.sessionRepo.FindByUserAndToken(claims.Subject, cookieToken)
+	_, err := as.sessionRepo.FindByUserAndToken(claims.Subject, cookieToken)
 	if err != nil {
 		return "", err
 	}
@@ -176,25 +176,7 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 		return "", err
 	}
 
-	// Tạo refresh token mới nếu muốn "rotate" refresh token
-	timeRemember, err := utils.ParseDuration(global.Config.JwtExpirationTimeRemember)
-	if err != nil {
-		return "", err
-	}
-	newRefreshToken, err := utils.GenerateToken(user, timeRemember)
-	if err != nil {
-		return "", err
-	}
-
-	// Cập nhật refresh token trong session nếu cần
-	session.Token = newRefreshToken
-	session.ExpiresAt = time.Now().Add(timeRemember)
-
-	if err := as.sessionRepo.Save(session); err != nil {
-		return "", err
-	}
-
-	utils.SetCookiesToken(c, accessToken, newRefreshToken, timeDefault, timeRemember)
+	utils.SetCookiesToken(c, accessToken, "", timeDefault, -1)
 	return accessToken, nil
 }
 

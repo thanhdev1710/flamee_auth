@@ -102,18 +102,33 @@ func (ac *AuthControllers) Login(c *gin.Context) {
 }
 
 func (ac *AuthControllers) RefreshToken(c *gin.Context) {
-	// Lấy refresh token từ cookie
-	cookieToken, err := c.Cookie("refresh_token")
-	if err != nil {
+	// Đọc refresh token từ body của yêu cầu
+	var requestData struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	// Parse body request để lấy refresh token
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Dữ liệu yêu cầu không hợp lệ",
+		})
+		return
+	}
+
+	refreshToken := requestData.RefreshToken
+
+	// Kiểm tra nếu refresh token không có trong body
+	if refreshToken == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
-			"message": "mã thông báo làm mới bị thiếu",
+			"message": "Mã thông báo làm mới bị thiếu",
 		})
 		return
 	}
 
 	// Xác thực refresh token
-	claims, err := utils.ValidateToken(cookieToken)
+	claims, err := utils.ValidateToken(refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -123,7 +138,7 @@ func (ac *AuthControllers) RefreshToken(c *gin.Context) {
 	}
 
 	// Gọi AuthService để xử lý logic refresh token
-	accessToken, err := ac.authServices.RefreshToken(cookieToken, claims, c)
+	accessToken, err := ac.authServices.RefreshToken(refreshToken, claims, c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -135,7 +150,7 @@ func (ac *AuthControllers) RefreshToken(c *gin.Context) {
 	// Trả về access token mới
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "Refresh token success",
+		"message": "Làm mới token thành công",
 		"token":   accessToken,
 	})
 }
