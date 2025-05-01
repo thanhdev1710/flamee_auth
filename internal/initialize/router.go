@@ -32,13 +32,12 @@ func InitRouter() *gin.Engine {
 
 	// 4. CORS - nên đặt trước mọi route logic
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{global.Url.UrlFrontEnd}, // Cập nhật đúng URL frontend
+		AllowOrigins:     []string{"http://localhost:3000"}, // Cập nhật đúng URL frontend
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-API-KEY"},
 		ExposeHeaders:    []string{"X-Total-Count"}, // Để expose thêm header cho frontend
 		AllowCredentials: true,                      // Quan trọng: Cho phép gửi cookies
 		MaxAge:           12 * time.Hour,            // Cấu hình thời gian cache cho preflight request
-
 	}))
 
 	// 5. Kiểm tra API key

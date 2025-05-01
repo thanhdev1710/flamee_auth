@@ -30,18 +30,18 @@ func SetCookiesToken(c *gin.Context, accessToken, refreshToken string, timeDefau
 	c.SetSameSite(http.SameSiteNoneMode)
 	// Cookie Access Token
 	c.SetCookie(
-		HexString("flamee_access_token"), // Tên cookie
-		accessToken,                      // Giá trị
-		int(timeDefault.Seconds()),       // Thời gian sống (giây)
-		"/",                              // Path
-		global.Config.Domain,             // Domain (ví dụ: flamee-auth.onrender.com)
-		true,                             // Secure (chỉ gửi qua HTTPS)
-		true,                             // HttpOnly
+		HexString(global.Token.AccessToken), // Tên cookie
+		accessToken,                         // Giá trị
+		int(timeDefault.Seconds()),          // Thời gian sống (giây)
+		"/",                                 // Path
+		global.Config.Domain,                // Domain (ví dụ: flamee-auth.onrender.com)
+		true,                                // Secure (chỉ gửi qua HTTPS)
+		true,                                // HttpOnly
 	)
 
 	// Cookie Refresh Token
 	c.SetCookie(
-		HexString("flamee_refresh_token"),
+		HexString(global.Token.RefreshToken),
 		refreshToken,
 		int(timeRemember.Seconds()),
 		"/",

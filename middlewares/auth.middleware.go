@@ -1,9 +1,9 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/thanhdev1710/flamee_auth/global"
@@ -14,10 +14,10 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		parts := strings.Split(authHeader, " ")
-
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		// Lấy token từ cookie
+		cookieName := utils.HexString(global.Token.AccessToken)
+		tokenStr, err := c.Cookie(cookieName)
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
 				"message": "Vui lòng đăng nhập",
@@ -25,8 +25,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		tokenStr := parts[1]
 
 		// Kiểm tra token hợp lệ
 		claims, err := utils.ValidateToken(tokenStr)
@@ -39,9 +37,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Gán thông tin vào context
 		c.Set("userId", claims.Subject)
 		c.Set("role", claims.Role)
-		c.Set("jwt", authHeader)
+		c.Set("jwt", fmt.Sprintf("Bearer %s", tokenStr)) // vẫn giữ định dạng Bearer để không cần đổi phía sau
 
 		c.Next()
 	}

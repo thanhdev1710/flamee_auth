@@ -16,8 +16,17 @@ var (
 		Banned:   "banned",
 		Deleted:  "deleted",
 	}
-	Url settings.Url
+	Url   settings.Url
+	Token = TokenStruct{
+		AccessToken:  "flamee_access_token",
+		RefreshToken: "flamee_refresh_token",
+	}
 )
+
+type TokenStruct struct {
+	AccessToken  string
+	RefreshToken string
+}
 
 type UserStatus struct {
 	Active   string
