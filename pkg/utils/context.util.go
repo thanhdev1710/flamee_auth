@@ -26,27 +26,32 @@ func GetRole(c *gin.Context) string {
 	return ""
 }
 
-func SetCookiesToken(c *gin.Context, accessToken, refreshToken string, timeDefault, timeRemember time.Duration) {
+func SetCookiesToken(c *gin.Context, accessToken, refreshToken *string, timeDefault, timeRemember time.Duration) {
 	c.SetSameSite(http.SameSiteNoneMode)
+
 	// Cookie Access Token
-	c.SetCookie(
-		HexString(global.Token.AccessToken), // Tên cookie
-		accessToken,                         // Giá trị
-		int(timeDefault.Seconds()),          // Thời gian sống (giây)
-		"/",                                 // Path
-		global.Config.Domain,                // Domain (ví dụ: flamee-auth.onrender.com)
-		true,                                // Secure (chỉ gửi qua HTTPS)
-		true,                                // HttpOnly
-	)
+	if accessToken != nil {
+		c.SetCookie(
+			HexString(global.Token.AccessToken), // Tên cookie
+			*accessToken,                        // Giá trị
+			int(timeDefault.Seconds()),          // Thời gian sống (giây)
+			"",                                  // Path
+			global.Config.Domain,                // Domain (ví dụ: flamee-auth.onrender.com)
+			true,                                // Secure (chỉ gửi qua HTTPS)
+			true,                                // HttpOnly
+		)
+	}
 
 	// Cookie Refresh Token
-	c.SetCookie(
-		HexString(global.Token.RefreshToken),
-		refreshToken,
-		int(timeRemember.Seconds()),
-		"/",
-		global.Config.Domain,
-		true,
-		true,
-	)
+	if refreshToken != nil {
+		c.SetCookie(
+			HexString(global.Token.RefreshToken),
+			*refreshToken,
+			int(timeRemember.Seconds()),
+			"",
+			global.Config.Domain,
+			true,
+			true,
+		)
+	}
 }

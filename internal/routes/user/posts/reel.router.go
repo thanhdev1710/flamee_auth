@@ -20,7 +20,7 @@ func (rr *ReelRouter) InitReelRouter(Router *gin.RouterGroup) {
 		Use(middlewares.AuthMiddleware()).
 		Use(middlewares.VerifyAccount())
 	{
-		ReelRouterPrivate.POST("/", utils.ForwardTo(global.Url.UrlPostService))
+		ReelRouterPrivate.POST("", utils.ForwardTo(global.Url.UrlPostService))
 		ReelRouterPrivate.DELETE("/:id", utils.ForwardTo(global.Url.UrlPostService))
 	}
 }

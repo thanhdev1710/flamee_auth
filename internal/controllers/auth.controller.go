@@ -102,27 +102,12 @@ func (ac *AuthControllers) Login(c *gin.Context) {
 }
 
 func (ac *AuthControllers) RefreshToken(c *gin.Context) {
-	// Đọc refresh token từ body của yêu cầu
-	var requestData struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
-	// Parse body request để lấy refresh token
-	if err := c.ShouldBindJSON(&requestData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Dữ liệu yêu cầu không hợp lệ",
-		})
-		return
-	}
-
-	refreshToken := requestData.RefreshToken
-
-	// Kiểm tra nếu refresh token không có trong body
-	if refreshToken == "" {
+	// Lấy refresh token từ cookie
+	refreshToken, err := c.Cookie(utils.HexString(global.Token.RefreshToken))
+	if err != nil || refreshToken == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
-			"message": "Mã thông báo làm mới bị thiếu",
+			"message": "Không tìm thấy refresh token trong cookie",
 		})
 		return
 	}

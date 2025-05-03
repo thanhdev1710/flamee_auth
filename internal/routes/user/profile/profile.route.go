@@ -19,9 +19,9 @@ func (pr *ProfileRouter) InitProfileRouter(Router *gin.RouterGroup) {
 		Use(middlewares.AuthMiddleware()).
 		Use(middlewares.VerifyAccount())
 	{
-		ProfileRouterPrivate.GET("/", utils.ForwardTo(global.Url.UrlUserService))
-		ProfileRouterPrivate.POST("/", utils.ForwardTo(global.Url.UrlUserService))
-		ProfileRouterPrivate.PUT("/", utils.ForwardTo(global.Url.UrlUserService))
+		ProfileRouterPrivate.GET("", utils.ForwardTo(global.Url.UrlUserService))
+		ProfileRouterPrivate.POST("", utils.ForwardTo(global.Url.UrlUserService))
+		ProfileRouterPrivate.PUT("", utils.ForwardTo(global.Url.UrlUserService))
 
 		ProfileRouterPrivate.GET("/online", utils.ForwardTo(global.Url.UrlUserService))
 		ProfileRouterPrivate.GET("/search", utils.ForwardTo(global.Url.UrlUserService))

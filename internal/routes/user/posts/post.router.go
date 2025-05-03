@@ -20,7 +20,7 @@ func (pr *PostRouter) InitPostRouter(Router *gin.RouterGroup) {
 		Use(middlewares.AuthMiddleware()).
 		Use(middlewares.VerifyAccount())
 	{
-		PostRouterPrivate.POST("/", utils.ForwardTo(global.Url.UrlPostService))
+		PostRouterPrivate.POST("", utils.ForwardTo(global.Url.UrlPostService))
 		PostRouterPrivate.PUT("/:id", utils.ForwardTo(global.Url.UrlPostService))
 		PostRouterPrivate.DELETE("/:id", utils.ForwardTo(global.Url.UrlPostService))
 	}

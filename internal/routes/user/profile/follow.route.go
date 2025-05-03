@@ -20,6 +20,6 @@ func (fr *FollowRouter) InitFollowRouter(Router *gin.RouterGroup) {
 		Use(middlewares.VerifyAccount())
 	{
 		FollowRouterPrivate.GET("/friend_suggestions", utils.ForwardTo(global.Url.UrlUserService))
-		FollowRouterPrivate.POST("/", utils.ForwardTo(global.Url.UrlUserService))
+		FollowRouterPrivate.POST("", utils.ForwardTo(global.Url.UrlUserService))
 	}
 }

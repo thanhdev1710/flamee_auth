@@ -12,7 +12,7 @@ func (pr *PostRouter) InitPostRouter(Router *gin.RouterGroup) {
 	// Public router
 	PostRouterPublic := Router.Group("/admin/posts")
 	{
-		PostRouterPublic.GET("/")
+		PostRouterPublic.GET("")
 		PostRouterPublic.GET("/:id", utils.ForwardTo("http://localhost:3000"))
 	}
 	// Private router
@@ -20,7 +20,7 @@ func (pr *PostRouter) InitPostRouter(Router *gin.RouterGroup) {
 		Use(middlewares.AuthMiddleware()).
 		Use(middlewares.VerifyAccount())
 	{
-		PostRouterPrivate.POST("/", utils.ForwardTo("http://localhost:3000"))
+		PostRouterPrivate.POST("", utils.ForwardTo("http://localhost:3000"))
 		PostRouterPrivate.PUT("/:id", utils.ForwardTo("http://localhost:3000"))
 		PostRouterPrivate.DELETE("/:id", utils.ForwardTo("http://localhost:3000"))
 	}

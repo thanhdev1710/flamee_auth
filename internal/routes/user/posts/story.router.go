@@ -20,7 +20,7 @@ func (sr *StoryRouter) InitStoryRouter(Router *gin.RouterGroup) {
 		Use(middlewares.AuthMiddleware()).
 		Use(middlewares.VerifyAccount())
 	{
-		StoryRouterPrivate.POST("/", utils.ForwardTo(global.Url.UrlPostService))
+		StoryRouterPrivate.POST("", utils.ForwardTo(global.Url.UrlPostService))
 		StoryRouterPrivate.DELETE("/:id", utils.ForwardTo(global.Url.UrlPostService))
 	}
 }

@@ -91,7 +91,7 @@ func (as *AuthServices) RegisterUser(user UserRegisterRequest, c *gin.Context) (
 	}
 
 	// Set token cookie
-	utils.SetCookiesToken(c, accessToken, refreshToken, timeDefault, timeRemember)
+	utils.SetCookiesToken(c, &accessToken, &refreshToken, timeDefault, timeRemember)
 	return accessToken, nil
 }
 
@@ -148,7 +148,7 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, c *gin.Context) (string
 	}
 
 	// Gửi cookies
-	utils.SetCookiesToken(c, accessToken, refreshToken, accessTokenDuration, refreshTokenDuration)
+	utils.SetCookiesToken(c, &accessToken, &refreshToken, accessTokenDuration, refreshTokenDuration)
 	return accessToken, nil
 }
 
@@ -175,7 +175,7 @@ func (as *AuthServices) RefreshToken(cookieToken string, claims *utils.Claims, c
 		return "", err
 	}
 
-	utils.SetCookiesToken(c, accessToken, "", timeDefault, -1)
+	utils.SetCookiesToken(c, &accessToken, nil, timeDefault, -1)
 	return accessToken, nil
 }
 
@@ -187,7 +187,8 @@ func (as *AuthServices) LogoutUser(c *gin.Context) error {
 		return err
 	}
 
-	utils.SetCookiesToken(c, "", "", -1, -1)
+	empty := ""
+	utils.SetCookiesToken(c, &empty, &empty, -1, -1)
 
 	return as.sessionRepo.RevokeTokensByUserId(userId)
 }
