@@ -12,6 +12,7 @@ type User struct {
 	Password           string              `gorm:"type:varchar(255);not null" json:"password"`
 	Role               string              `gorm:"type:varchar(10);not null;default:'user'" json:"role"`
 	IsVerified         bool                `gorm:"default:false" json:"is_verified"`
+	IsProfile          bool                `gorm:"default:false" json:"is_profile"`
 	Status             string              `gorm:"type:varchar(10);default:inactive" json:"status"`
 	CreatedAt          time.Time           `gorm:"default:now()" json:"created_at"`
 	UpdatedAt          time.Time           `gorm:"default:now()" json:"updated_at"`

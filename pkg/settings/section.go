@@ -9,6 +9,7 @@ type Config struct {
 	JwtExpirationTimeDefault  string `mapstructure:"JWT_EXPIRATION_TIME_DEFAULT"`
 	JwtExpirationTimeRemember string `mapstructure:"JWT_EXPIRATION_TIME_REMEMBER"`
 	Postgre                   Postgre
+	Nats                      Nats
 	Email                     Email
 	Logger                    Logger
 }
@@ -46,4 +47,11 @@ type Postgre struct {
 	ConnMaxIdleTime int    `mapstructure:"CONN_MAX_IDLE_TIME_DB"`
 	ConnMaxLifeTime int    `mapstructure:"CONN_MAX_LIFE_TIME"`
 	ConnMaxOpen     int    `mapstructure:"CONN_MAX_OPEN"`
+}
+
+type Nats struct {
+	Host          string `mapstructure:"NATS_HOST"`
+	Port          string `mapstructure:"NATS_PORT"`
+	MaxReconnects int    `mapstructure:"NATS_MAX_RECONNECTS"`
+	ReconnectWait int    `mapstructure:"NATS_RECONNECT_WAIT"`
 }

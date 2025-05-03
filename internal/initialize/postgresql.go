@@ -35,6 +35,7 @@ func InitPostgreSql() {
 	global.Pdb = db
 
 	SetPool()
+
 	// MigrateTables()
 }
 
@@ -58,4 +59,20 @@ func MigrateTables() {
 	); err != nil {
 		panic("failed to migrate database: " + err.Error())
 	}
+}
+
+func ClosePostgreSql() {
+	// Lấy kết nối cơ sở dữ liệu
+	sqlDb, err := global.Pdb.DB()
+	if err != nil {
+		panic("Lỗi khi lấy đối tượng DB PostgreSQL: " + err.Error())
+	}
+
+	// Đóng kết nối cơ sở dữ liệu
+	err = sqlDb.Close()
+	if err != nil {
+		panic("Lỗi khi đóng kết nối PostgreSQL: " + err.Error())
+	}
+
+	fmt.Println("🔒 Đã đóng kết nối PostgreSQL")
 }

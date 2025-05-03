@@ -51,6 +51,11 @@ func LoadConfig() {
 	viper.BindEnv("CONN_MAX_OPEN")
 	viper.BindEnv("CONN_MAX_LIFE_TIME")
 
+	viper.BindEnv("NATS_HOST")
+	viper.BindEnv("NATS_PORT")
+	viper.BindEnv("NATS_MAX_RECONNECTS")
+	viper.BindEnv("NATS_RECONNECT_WAIT")
+
 	err = viper.Unmarshal(&global.Config)
 	if err != nil {
 		log.Fatalf("Cannot unmarshal config: %v", err)
@@ -70,5 +75,9 @@ func LoadConfig() {
 	err = viper.Unmarshal(&global.Url)
 	if err != nil {
 		log.Fatalf("Cannot unmarshal config: %v", err)
+	}
+	err = viper.Unmarshal(&global.Config.Nats)
+	if err != nil {
+		log.Fatalf("Cannot unmarshal NATS config: %v", err)
 	}
 }

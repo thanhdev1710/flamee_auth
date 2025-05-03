@@ -14,6 +14,7 @@ type Claims struct {
 	Role       string `json:"role"`
 	Email      string `json:"email"`
 	IsVerified bool   `json:"is_verified"`
+	IsProfile  bool   `json:"is_profile"`
 	jwt.RegisteredClaims
 }
 
@@ -23,6 +24,7 @@ func GenerateToken(user *models.User, parsedExpirationTime time.Duration) (strin
 		Role:       user.Role,
 		Email:      user.Email,
 		IsVerified: user.IsVerified,
+		IsProfile:  user.IsProfile,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.Id.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(parsedExpirationTime)), // Token hết hạn sau 24 giờ

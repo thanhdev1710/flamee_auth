@@ -107,49 +107,48 @@ func (as *AuthServices) LoginUser(user UserLoginRequest, c *gin.Context) (string
 		return "", err
 	}
 
-	// Tạo access token
-	timeDefault, err := utils.ParseDuration(global.Config.JwtExpirationTimeDefault)
+	// Parse thời hạn token
+	accessTokenDuration, err := utils.ParseDuration(global.Config.JwtExpirationTimeDefault)
 	if err != nil {
 		return "", err
 	}
 
-	accessToken, err := utils.GenerateToken(userFromDB, timeDefault)
-	if err != nil {
-		return "", err
-	}
-
-	// Nếu có Remember Me thì tạo thêm refresh token và lưu session
-	var timeRememberTmp time.Duration
-	var refreshTokenTmp string
+	var refreshTokenDuration time.Duration
 	if user.RememberMe {
-		timeRemember, err := utils.ParseDuration(global.Config.JwtExpirationTimeRemember)
-		if err != nil {
-			return "", err
-		}
-
-		refreshToken, err := utils.GenerateToken(userFromDB, timeRemember)
-		if err != nil {
-			return "", err
-		}
-
-		session := models.Session{
-			Token:     refreshToken,
-			UserId:    userFromDB.Id,
-			UserAgent: c.Request.UserAgent(),
-			IpAddress: c.ClientIP(),
-			ExpiresAt: time.Now().Add(timeRemember),
-		}
-
-		if err := as.sessionRepo.Create(&session); err != nil {
-			return "", err
-		}
-
-		timeRememberTmp = timeRemember
-		refreshTokenTmp = refreshToken
+		refreshTokenDuration, err = utils.ParseDuration(global.Config.JwtExpirationTimeRemember)
+	} else {
+		refreshTokenDuration = 24 * time.Hour
+	}
+	if err != nil {
+		return "", err
 	}
 
-	// Set token cookie
-	utils.SetCookiesToken(c, accessToken, refreshTokenTmp, timeDefault, timeRememberTmp)
+	// Tạo access token
+	accessToken, err := utils.GenerateToken(userFromDB, accessTokenDuration)
+	if err != nil {
+		return "", err
+	}
+
+	// Tạo refresh token
+	refreshToken, err := utils.GenerateToken(userFromDB, refreshTokenDuration)
+	if err != nil {
+		return "", err
+	}
+
+	// Lưu session
+	session := models.Session{
+		Token:     refreshToken,
+		UserId:    userFromDB.Id,
+		UserAgent: c.Request.UserAgent(),
+		IpAddress: c.ClientIP(),
+		ExpiresAt: time.Now().Add(refreshTokenDuration),
+	}
+	if err := as.sessionRepo.Create(&session); err != nil {
+		return "", err
+	}
+
+	// Gửi cookies
+	utils.SetCookiesToken(c, accessToken, refreshToken, accessTokenDuration, refreshTokenDuration)
 	return accessToken, nil
 }
 

@@ -52,6 +52,27 @@ func (us *UserServices) ConfirmEmail(email string) error {
 	return nil
 }
 
+func (us *UserServices) ConfirmProfile(userId string) error {
+	user, err := us.userRepo.FindById(userId)
+	if err != nil {
+		return err
+	}
+
+	if user.IsProfile {
+		return errors.New("tài khoản này đã có")
+	}
+
+	user.IsProfile = true
+	user.UpdatedAt = time.Now()
+
+	err = us.userRepo.Save(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (us *UserServices) SendResetPassword(email string, c *gin.Context) error {
 	user, err := repo.NewUserRepo().FindByEmail(email)
 	if err != nil {

@@ -8,6 +8,7 @@ func Run() {
 	LoadConfig()
 	InitLogger()
 	InitPostgreSql()
+	InitNats()
 	r := InitRouter()
 
 	port := global.Config.Port
