@@ -101,15 +101,24 @@ func (ac *AuthControllers) Login(c *gin.Context) {
 	})
 }
 
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
 func (ac *AuthControllers) RefreshToken(c *gin.Context) {
 	// Lấy refresh token từ cookie
 	refreshToken, err := c.Cookie(utils.HexString(global.Token.RefreshToken))
 	if err != nil || refreshToken == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":  "error",
-			"message": "Không tìm thấy refresh token trong cookie",
-		})
-		return
+		var req RefreshTokenRequest
+		if bindErr := c.ShouldBindJSON(&req); bindErr != nil || req.RefreshToken == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
+				"message": "Không tìm thấy refresh token trong cookie",
+			})
+			return
+		}
+
+		refreshToken = req.RefreshToken
 	}
 
 	// Xác thực refresh token
