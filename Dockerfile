@@ -1,37 +1,39 @@
-# Build stage
+# ---------- Stage 1: Build ----------
 FROM golang:1.24-alpine3.20 AS builder
 
-# Cài đặt thư viện cần thiết và môi trường làm việc
+# Bật Go module và tắt CGO để build binary tĩnh (tương thích Alpine)
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+
 WORKDIR /app
 
-# Copy go.mod và go.sum vào container và tải dependencies
+# Copy go.mod và go.sum trước để tận dụng cache build layer
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy phần còn lại của ứng dụng vào container
+# Copy toàn bộ source code vào container
 COPY . .
 
-# Build ứng dụng Go
-RUN go build -o flamee_auth ./cmd/server/main.go
+# Build binary (tên flamee_auth)
+RUN go build -ldflags="-s -w" -o flamee_auth ./cmd/server/main.go
 
-# Runtime stage (Sử dụng image nhẹ cho sản phẩm cuối cùng)
+
+# ---------- Stage 2: Runtime ----------
 FROM alpine:3.20
 
-# Tạo non-root user cho ứng dụng (bảo mật tốt hơn)
-RUN adduser -D -g '' appuser
-USER appuser
-
-# Cài đặt thư viện cần thiết cho môi trường runtime (nếu có)
-# Cài thêm các package khác nếu cần thiết, ví dụ:
-# RUN apk add --no-cache <package_name>
+# Thêm chứng chỉ CA (cần thiết nếu app gọi HTTPS — ví dụ AWS SDK, API bên ngoài)
+RUN apk add --no-cache ca-certificates tzdata && \
+    adduser -D -g '' appuser
 
 WORKDIR /app
 
-# Copy binary từ build stage vào runtime container
+# Copy binary từ builder stage
 COPY --from=builder /app/flamee_auth .
 
-# Expose port mà ứng dụng sẽ chạy trên Render
+# Chạy dưới user không phải root (tăng bảo mật)
+USER appuser
+
+# Expose port app lắng nghe
 EXPOSE 8081
 
-# Chạy ứng dụng
-CMD ["./flamee_auth"]
+# Run app
+ENTRYPOINT ["./flamee_auth"]

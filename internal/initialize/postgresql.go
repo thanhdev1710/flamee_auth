@@ -2,6 +2,7 @@ package initialize
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/thanhdev1710/flamee_auth/global"
@@ -33,6 +34,10 @@ func InitPostgreSql() {
 	}
 
 	global.Pdb = db
+
+	if global.Pdb != nil {
+		log.Println("✅ Kết nối PostgreSql thành công")
+	}
 
 	SetPool()
 
