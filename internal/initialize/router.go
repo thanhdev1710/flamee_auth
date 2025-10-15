@@ -61,7 +61,6 @@ func InitRouter() *gin.Engine {
 	{
 		userRouter.Post.InitInteractionRouter(MainGroup)
 		userRouter.Post.InitPostRouter(MainGroup)
-
 		userRouter.Profile.InitProfileRouter(MainGroup)
 		userRouter.Profile.InitFollowRouter(MainGroup)
 	}

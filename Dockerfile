@@ -29,8 +29,7 @@ WORKDIR /app
 # Copy binary từ builder stage
 COPY --from=builder /app/flamee_auth .
 
-# Chạy dưới user không phải root (tăng bảo mật)
-USER appuser
+USER root
 
 # Expose port app lắng nghe
 EXPOSE 8081
