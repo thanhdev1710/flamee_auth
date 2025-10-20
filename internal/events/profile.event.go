@@ -28,5 +28,4 @@ func HandleProfileCreated(m *nats.Msg) {
 
 	fmt.Printf("🔔 Sự kiện profile.created nhận được cho user_id: %s\n", event.UserID)
 	services.NewUserServices().ConfirmProfile(event.UserID)
-
 }

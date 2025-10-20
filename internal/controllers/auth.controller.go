@@ -65,7 +65,6 @@ func (ac *AuthControllers) Register(c *gin.Context) {
 }
 
 func (ac *AuthControllers) Login(c *gin.Context) {
-
 	var user services.UserLoginRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
