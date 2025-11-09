@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -9,6 +10,7 @@ import (
 )
 
 func ForwardTo(target string) gin.HandlerFunc {
+	fmt.Println(target)
 	return func(c *gin.Context) {
 		// Lấy JWT từ context
 		jwtToken := c.GetString("jwt")

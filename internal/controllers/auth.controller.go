@@ -43,9 +43,18 @@ func (ac *AuthControllers) Register(c *gin.Context) {
 		return
 	}
 
-	token, err := ac.authServices.RegisterUser(user, c)
+	_, err := ac.authServices.RegisterUser(user, c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	token, err := utils.Encrypt(user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": err.Error(),
 		})
@@ -208,7 +217,7 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 	verificationURL := fmt.Sprintf("%s/auth/verify-email/%s", global.Url.UrlFrontEnd, token)
 
 	// Gửi email xác nhận
-	ac.emailServices.Send(email, verificationURL, "verification")
+	ac.emailServices.Send(user.Email, verificationURL, "verification")
 
 	// Phản hồi về việc gửi email
 	c.JSON(http.StatusOK, gin.H{
