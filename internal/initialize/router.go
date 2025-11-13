@@ -64,6 +64,7 @@ func InitRouter() *gin.Engine {
 		userRouter.Profile.InitProfileRouter(MainGroup)
 		userRouter.Profile.InitFollowRouter(MainGroup)
 		userRouter.Search.InitSearchRouter(MainGroup)
+		userRouter.Notification.InitNotificationRouter(MainGroup)
 	}
 
 	return r
