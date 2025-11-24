@@ -20,6 +20,7 @@ func (pr *ProfileRouter) InitProfileRouter(Router *gin.RouterGroup) {
 		Use(middlewares.VerifyAccount())
 	{
 		ProfileRouterPrivate.GET("", utils.ForwardTo(global.Url.UrlUserService))
+		ProfileRouterPrivate.GET("/:username", utils.ForwardTo(global.Url.UrlUserService))
 		ProfileRouterPrivate.POST("", utils.ForwardTo(global.Url.UrlUserService))
 		ProfileRouterPrivate.PUT("", utils.ForwardTo(global.Url.UrlUserService))
 
