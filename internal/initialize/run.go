@@ -1,8 +1,6 @@
 package initialize
 
 import (
-	"fmt"
-
 	"github.com/thanhdev1710/flamee_auth/global"
 )
 
@@ -12,8 +10,6 @@ func Run() {
 	InitPostgreSql()
 	InitNats()
 	r := InitRouter()
-
-	fmt.Print(global.Url)
 
 	port := global.Config.Port
 	if port == "" {

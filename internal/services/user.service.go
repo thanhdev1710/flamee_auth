@@ -93,7 +93,6 @@ func (us *UserServices) SendResetPassword(email string, c *gin.Context) error {
 
 	// Tạo URL xác thực chứa token
 	verificationURL := fmt.Sprintf("%s/auth/reset-password/%s", global.Url.UrlFrontEnd, verificationToken.Token)
-	fmt.Println(verificationURL)
 	// Gửi email xác nhận
 	us.emailServices.Send(email, verificationURL, "password_reset")
 	return nil

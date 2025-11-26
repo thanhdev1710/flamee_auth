@@ -31,9 +31,9 @@ func InitRouter() *gin.Engine {
 	// 4. CORS - nên đặt trước mọi route logic
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{global.Url.UrlFrontEnd}, // Cập nhật đúng URL frontend
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-API-KEY"},
-		ExposeHeaders:    []string{"X-Total-Count"}, // Để expose thêm header cho frontend
+		ExposeHeaders:    []string{"X-Total-Count"}, // Để expose thêm header cho UrlFrontEnd
 		AllowCredentials: true,                      // Quan trọng: Cho phép gửi cookies
 	}))
 
@@ -47,10 +47,14 @@ func InitRouter() *gin.Engine {
 	adminRouter := routes.RouterGroupApp.Admin
 	userRouter := routes.RouterGroupApp.User
 	authRouter := routes.RouterGroupApp.Auth
+	logRouter := routes.RouterGroupApp.Log
 
 	MainGroup := r.Group("/api/v1")
 	{
 		MainGroup.GET("/check-status")
+	}
+	{
+		logRouter.InitLogRouter(MainGroup)
 	}
 	{
 		authRouter.InitAuthRouter(MainGroup)

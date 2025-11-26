@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 
@@ -28,9 +27,9 @@ func CheckAPIKey() gin.HandlerFunc {
 
 // Middleware chặn các User-Agent đáng ngờ
 func BlockSuspiciousUserAgents() gin.HandlerFunc {
-	// Một vài regex pattern đơn giản (tối ưu theo danh sách dài bạn đưa)
+	// Một vài regex pattern đơn giản (tối ưu theo danh sách dài bạn đưa) `(?i)curl`,
 	patterns := []string{
-		`(?i)curl`, `(?i)wget`, `(?i)httpie`, `(?i)python`, `(?i)go-http-client`,
+		`(?i)wget`, `(?i)httpie`, `(?i)python`, `(?i)go-http-client`,
 		`(?i)java`, `(?i)libwww-perl`, `(?i)lynx`, `(?i)scrapy`,
 		`(?i)phantomjs`, `(?i)headlesschrome`, `(?i)sqlmap`, `(?i)nikto`, `(?i)nmap`,
 		`(?i)zap`, `(?i)fuzz`, `(?i)bot`, `(?i)spider`,
@@ -47,7 +46,6 @@ func BlockSuspiciousUserAgents() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ua := c.GetHeader("User-Agent")
-		fmt.Println(ua)
 		if ua == "" {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"message": "Access denied: missing User-Agent",

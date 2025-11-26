@@ -229,8 +229,6 @@ func (ac *AuthControllers) SendVerifyEmail(c *gin.Context) {
 func (ac *AuthControllers) VerifyEmail(c *gin.Context) {
 	// Lấy token từ tham số trong URL
 	token := c.Param("token")
-
-	fmt.Println("Token ::", token)
 	// Giải mã token để lấy email
 	email, err := utils.Decrypt(token)
 	if err != nil {

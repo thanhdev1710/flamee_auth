@@ -17,7 +17,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Lấy token từ cookie
 		accessToken := utils.HexString(global.Token.AccessToken)
 		tokenStr, err := c.Cookie(accessToken)
-		fmt.Println("token::: ", tokenStr)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
